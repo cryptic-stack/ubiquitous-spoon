@@ -59,3 +59,4 @@
 - Added MVP Logstash ingest from Suricata and Zeek log volumes into OpenSearch.
 - Added `sm-seed-nsm-events` to seed and verify Suricata/Zeek-shaped ingest records.
 - Added `sm-process-pcap` to process PCAPs through Suricata and Zeek into the ingest path.
+- Replaced static SOC portal with an MVP OpenSearch-backed operator console and SOC API.

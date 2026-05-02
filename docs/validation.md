@@ -16,6 +16,7 @@ This performs:
 - Docker Compose profile validation for all profiles
 - Docker-backed Bash syntax checks
 - Docker-backed Python syntax checks
+- SOC portal API helper unit tests
 - Docker-backed JSON parsing for schemas, OpenSearch templates, and examples
 - Docker-backed YAML parsing for Prometheus and Grafana provisioning
 - Docker-backed autoinstall YAML validation

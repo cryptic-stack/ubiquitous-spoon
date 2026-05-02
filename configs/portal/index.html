@@ -7,71 +7,131 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0f1419;
-        --panel: #151d24;
-        --panel-2: #1c2730;
-        --text: #eef4f8;
-        --muted: #9fb0bd;
-        --line: #2c3a45;
-        --accent: #2fb7a1;
-        --warn: #e1b341;
-        --critical: #e05d5d;
+        --bg: #101418;
+        --nav: #151b21;
+        --panel: #1b232a;
+        --panel-2: #222c34;
+        --line: #34404a;
+        --text: #edf3f7;
+        --muted: #a8b6c0;
+        --accent: #34b39b;
+        --blue: #6aa6ff;
+        --warn: #e5b64d;
+        --bad: #e36363;
+        --good: #58c38c;
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 232px 1fr;
         background: var(--bg);
         color: var(--text);
+        font-family: Arial, sans-serif;
       }
 
-      header {
-        height: 56px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        border-bottom: 1px solid var(--line);
-        background: #111920;
+      aside {
+        background: var(--nav);
+        border-right: 1px solid var(--line);
+        min-height: 100vh;
+        padding: 18px 14px;
       }
 
       .brand {
-        font-size: 18px;
         font-weight: 700;
+        font-size: 18px;
+        margin: 0 8px 18px;
       }
 
       nav {
-        display: flex;
-        gap: 8px;
+        display: grid;
+        gap: 4px;
       }
 
-      nav a {
+      nav button,
+      .icon-button,
+      .primary-link {
+        border: 1px solid transparent;
+        background: transparent;
         color: var(--muted);
-        text-decoration: none;
-        padding: 8px 10px;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      nav button {
+        text-align: left;
+        padding: 10px 12px;
         border-radius: 6px;
       }
 
-      nav a.active {
+      nav button.active,
+      nav button:hover {
         background: var(--panel-2);
         color: var(--text);
+        border-color: var(--line);
       }
 
       main {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 24px;
+        min-width: 0;
       }
 
-      .summary {
+      header {
+        height: 62px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        justify-content: space-between;
+        padding: 0 22px;
+        border-bottom: 1px solid var(--line);
+        background: #12181e;
+      }
+
+      .query {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(760px, 100%);
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 0 11px;
+        font: inherit;
+      }
+
+      .icon-button,
+      .primary-link {
+        min-height: 38px;
+        border-radius: 6px;
+        padding: 0 12px;
+        background: var(--panel-2);
+        color: var(--text);
+        border-color: var(--line);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .content {
+        padding: 20px 22px 28px;
+      }
+
+      .metrics {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       .metric,
@@ -82,32 +142,36 @@
       }
 
       .metric {
-        padding: 16px;
+        padding: 14px;
+        min-height: 86px;
       }
 
-      .metric span {
-        display: block;
+      .metric span,
+      .muted {
         color: var(--muted);
-        font-size: 13px;
       }
 
       .metric strong {
         display: block;
         margin-top: 8px;
-        font-size: 28px;
+        font-size: 26px;
       }
 
-      .grid {
+      .layout {
         display: grid;
-        grid-template-columns: 1.5fr 1fr;
-        gap: 16px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+        gap: 14px;
       }
 
       .panel h2 {
         margin: 0;
-        padding: 14px 16px;
+        padding: 13px 15px;
         border-bottom: 1px solid var(--line);
-        font-size: 16px;
+        font-size: 15px;
+      }
+
+      .panel-body {
+        padding: 14px 15px;
       }
 
       table {
@@ -117,10 +181,11 @@
 
       th,
       td {
-        padding: 12px 16px;
+        padding: 10px 12px;
         border-bottom: 1px solid var(--line);
         text-align: left;
-        font-size: 14px;
+        font-size: 13px;
+        vertical-align: top;
       }
 
       th {
@@ -128,138 +193,346 @@
         font-weight: 600;
       }
 
+      tr[data-pivot] {
+        cursor: pointer;
+      }
+
+      tr[data-pivot]:hover {
+        background: #202a32;
+      }
+
       .badge {
         display: inline-flex;
         align-items: center;
-        min-height: 24px;
-        padding: 2px 8px;
+        min-height: 22px;
+        padding: 2px 7px;
         border-radius: 999px;
         background: var(--panel-2);
         color: var(--text);
         font-size: 12px;
       }
 
-      .critical {
-        color: var(--critical);
+      .critical { color: var(--bad); }
+      .high { color: var(--warn); }
+      .medium { color: var(--blue); }
+      .low { color: var(--good); }
+
+      .stack {
+        display: grid;
+        gap: 12px;
       }
 
-      .warn {
-        color: var(--warn);
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 8px;
+        font-size: 13px;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line);
       }
 
-      .ok {
-        color: var(--accent);
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
-      @media (max-width: 860px) {
-        header {
-          height: auto;
-          align-items: flex-start;
-          flex-direction: column;
-          gap: 10px;
-          padding: 14px 16px;
+      .view {
+        display: none;
+      }
+
+      .view.active {
+        display: block;
+      }
+
+      @media (max-width: 980px) {
+        body {
+          grid-template-columns: 1fr;
+        }
+
+        aside {
+          min-height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
         }
 
         nav {
-          flex-wrap: wrap;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
-        main {
-          padding: 16px;
+        header {
+          height: auto;
+          align-items: stretch;
+          flex-direction: column;
+          padding: 14px;
         }
 
-        .summary,
-        .grid {
+        .metrics,
+        .layout {
           grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <header>
+    <aside>
       <div class="brand">SentinelMesh SOC</div>
       <nav aria-label="Primary">
-        <a class="active" href="#">Overview</a>
-        <a href="#">Alerts</a>
-        <a href="#">Assets</a>
-        <a href="#">Cases</a>
-        <a href="#">Range</a>
+        <button class="active" data-view="alerts">Alerts</button>
+        <button data-view="dashboards">Dashboards</button>
+        <button data-view="hunt">Hunt</button>
+        <button data-view="cases">Cases</button>
+        <button data-view="detections">Detections</button>
+        <button data-view="pcap">PCAP</button>
+        <button data-view="grid">Grid</button>
+        <button data-view="assets">Assets</button>
       </nav>
-    </header>
+    </aside>
 
     <main>
-      <section class="summary" aria-label="Summary">
-        <div class="metric">
-          <span>Open Alerts</span>
-          <strong>0</strong>
+      <header>
+        <div class="query">
+          <input id="huntQuery" aria-label="Hunt query" value="event.module:suricata" placeholder="Search events, for example source.ip:10.10.10.25">
+          <button class="icon-button" id="runHunt" title="Run Hunt">Search</button>
         </div>
-        <div class="metric">
-          <span>Critical Assets</span>
-          <strong>1</strong>
+        <div class="links">
+          <a class="primary-link" id="grafanaLink" href="http://localhost:3000" target="_blank" rel="noreferrer">Grafana</a>
+          <a class="primary-link" id="dashboardsLink" href="http://localhost:5601" target="_blank" rel="noreferrer">OpenSearch</a>
         </div>
-        <div class="metric">
-          <span>Indexed Events</span>
-          <strong>0</strong>
-        </div>
-        <div class="metric">
-          <span>Sensor Health</span>
-          <strong class="warn">Pending</strong>
-        </div>
-      </section>
+      </header>
 
-      <section class="grid">
-        <div class="panel">
-          <h2>Priority Queue</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Asset</th>
-                <th>Signal</th>
-                <th>Risk</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Waiting</td>
-                <td>range-dc-01</td>
-                <td><span class="badge">seed context</span></td>
-                <td class="critical">critical</td>
-              </tr>
-              <tr>
-                <td>Waiting</td>
-                <td>sensor</td>
-                <td><span class="badge">deployment</span></td>
-                <td class="warn">pending</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="content">
+        <section class="metrics" aria-label="Summary">
+          <div class="metric"><span>Open Alerts</span><strong id="metricAlerts">...</strong></div>
+          <div class="metric"><span>Indexed Events</span><strong id="metricEvents">...</strong></div>
+          <div class="metric"><span>Known Assets</span><strong id="metricAssets">...</strong></div>
+          <div class="metric"><span>Critical Assets</span><strong id="metricCritical">...</strong></div>
+        </section>
 
-        <div class="panel">
-          <h2>Service Readiness</h2>
-          <table>
-            <tbody>
-              <tr>
-                <td>OpenSearch</td>
-                <td class="warn">pending</td>
-              </tr>
-              <tr>
-                <td>Asset Context</td>
-                <td class="ok">defined</td>
-              </tr>
-              <tr>
-                <td>Sensor Enrollment</td>
-                <td class="ok">defined</td>
-              </tr>
-              <tr>
-                <td>Range Engine</td>
-                <td class="ok">defined</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <section id="alerts" class="view active">
+          <div class="layout">
+            <div class="panel">
+              <h2>Priority Queue</h2>
+              <table>
+                <thead>
+                  <tr><th>Time</th><th>Signal</th><th>Source</th><th>Destination</th><th>Risk</th></tr>
+                </thead>
+                <tbody id="alertsBody"></tbody>
+              </table>
+            </div>
+            <div class="stack">
+              <div class="panel">
+                <h2>Context Panel</h2>
+                <div class="panel-body" id="contextPanel">Select an event to inspect pivots, asset context, and PCAP options.</div>
+              </div>
+              <div class="panel">
+                <h2>Event Modules</h2>
+                <div class="panel-body" id="moduleList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="dashboards" class="view">
+          <div class="layout">
+            <div class="panel">
+              <h2>Operator Dashboards</h2>
+              <div class="panel-body">
+                <div class="links">
+                  <a class="primary-link" href="http://localhost:3000/d/sentinelmesh-relationships/sentinelmesh-relationships" target="_blank" rel="noreferrer">Asset Relationships</a>
+                  <a class="primary-link" href="http://localhost:5601" target="_blank" rel="noreferrer">OpenSearch Dashboards</a>
+                  <a class="primary-link" href="http://localhost:9090" target="_blank" rel="noreferrer">Prometheus</a>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Observed Event Types</h2>
+              <div class="panel-body" id="serviceList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="hunt" class="view">
+          <div class="panel">
+            <h2>Hunt Results</h2>
+            <table>
+              <thead>
+                <tr><th>Time</th><th>Module</th><th>Type</th><th>Source</th><th>Destination</th><th>Detail</th></tr>
+              </thead>
+              <tbody id="huntBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="cases" class="view">
+          <div class="panel">
+            <h2>Cases</h2>
+            <div class="panel-body">
+              Case persistence is the next workflow layer. Current event detail panels include pivots that are ready to become case observables.
+            </div>
+          </div>
+        </section>
+
+        <section id="detections" class="view">
+          <div class="panel">
+            <h2>Detections</h2>
+            <div class="panel-body">
+              Detection management will track NIDS, Sigma, and YARA rules, tuning notes, and guided-analysis playbooks.
+            </div>
+          </div>
+        </section>
+
+        <section id="pcap" class="view">
+          <div class="panel">
+            <h2>PCAP Pivot</h2>
+            <div class="panel-body" id="pcapPanel">
+              PCAP retrieval is staged for the sensor capture phase. Use event pivots here to carry source, destination, and time context into `sm-process-pcap` or the future PCAP API.
+            </div>
+          </div>
+        </section>
+
+        <section id="grid" class="view">
+          <div class="panel">
+            <h2>Grid</h2>
+            <div class="panel-body">
+              <div class="kv"><span class="muted">SOC API</span><span id="socStatus">checking</span></div>
+              <div class="kv"><span class="muted">OpenSearch</span><span id="searchStatus">checking</span></div>
+              <div class="kv"><span class="muted">Logstash</span><span>profile service</span></div>
+              <div class="kv"><span class="muted">Sensor path</span><span>Suricata / Zeek volumes to Logstash</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="assets" class="view">
+          <div class="panel">
+            <h2>Asset Context</h2>
+            <table>
+              <thead>
+                <tr><th>Asset</th><th>IPs</th><th>Criticality</th><th>Risk</th><th>Vulns</th><th>Exposure</th></tr>
+              </thead>
+              <tbody id="assetsBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </main>
+
+    <script>
+      const state = { overview: null, events: [], assets: [] };
+
+      function text(value) {
+        return value === undefined || value === null || value === "" ? "-" : String(value);
+      }
+
+      function setView(name) {
+        document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+        document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === name));
+        if (name === "hunt") runHunt();
+      }
+
+      function rowEvent(event) {
+        return `
+          <tr data-pivot="${event.id}">
+            <td>${text(event.time)}</td>
+            <td><span class="badge">${text(event.module)}</span> ${text(event.event_type)}</td>
+            <td>${text(event.source_ip)}</td>
+            <td>${text(event.destination_ip)}:${text(event.destination_port)}</td>
+            <td class="${text(event.risk)}">${text(event.risk)}</td>
+          </tr>`;
+      }
+
+      function renderEvents(target, events) {
+        const body = document.getElementById(target);
+        body.innerHTML = events.length ? events.map(rowEvent).join("") : `<tr><td colspan="6" class="muted">No events found.</td></tr>`;
+        body.querySelectorAll("tr[data-pivot]").forEach((row) => {
+          row.addEventListener("click", () => showContext(events.find((event) => event.id === row.dataset.pivot)));
+        });
+      }
+
+      function showContext(event) {
+        if (!event) return;
+        document.getElementById("contextPanel").innerHTML = `
+          <div class="kv"><span class="muted">Time</span><span>${text(event.time)}</span></div>
+          <div class="kv"><span class="muted">Dataset</span><span>${text(event.dataset)}</span></div>
+          <div class="kv"><span class="muted">Source</span><span>${text(event.source_ip)}</span></div>
+          <div class="kv"><span class="muted">Destination</span><span>${text(event.destination_ip)}:${text(event.destination_port)}</span></div>
+          <div class="kv"><span class="muted">Signal</span><span>${text(event.signature)}</span></div>
+          <div class="links">
+            <button class="icon-button" onclick="pivotHunt('source.ip:${event.source_ip}')">Hunt Source</button>
+            <button class="icon-button" onclick="pivotHunt('destination.ip:${event.destination_ip}')">Hunt Destination</button>
+            <button class="icon-button" onclick="pcapPivot('${event.destination_ip}')">PCAP</button>
+          </div>`;
+      }
+
+      function pivotHunt(query) {
+        document.getElementById("huntQuery").value = query;
+        setView("hunt");
+      }
+
+      function pcapPivot(ip) {
+        document.getElementById("pcapPanel").innerHTML = `
+          <div class="kv"><span class="muted">Pivot IP</span><span>${text(ip)}</span></div>
+          <div class="kv"><span class="muted">Current path</span><span>Use offline PCAP processing or future sensor PCAP API.</span></div>
+          <pre>sudo sm-process-pcap --pcap /data/range/example.pcap</pre>`;
+        setView("pcap");
+      }
+
+      function renderAgg(target, values) {
+        const node = document.getElementById(target);
+        node.innerHTML = values.length
+          ? values.map((item) => `<div class="kv"><span>${text(item.key)}</span><span>${text(item.count)}</span></div>`).join("")
+          : `<span class="muted">No data yet.</span>`;
+      }
+
+      function renderAssets(assets) {
+        document.getElementById("assetsBody").innerHTML = assets.length
+          ? assets.map((asset) => `
+              <tr>
+                <td>${text(asset.name)}</td>
+                <td>${(asset.ip_addresses || []).join(", ")}</td>
+                <td>${text(asset.criticality)}</td>
+                <td class="${asset.risk_score >= 80 ? "critical" : asset.risk_score >= 50 ? "high" : "low"}">${text(asset.risk_score)}</td>
+                <td>${text(asset.vulnerability_count)}</td>
+                <td>${asset.internet_facing ? "internet-facing" : "internal"}</td>
+              </tr>`).join("")
+          : `<tr><td colspan="6" class="muted">No asset context loaded.</td></tr>`;
+      }
+
+      async function loadOverview() {
+        const response = await fetch("/api/overview");
+        state.overview = await response.json();
+        document.getElementById("metricAlerts").textContent = state.overview.metrics.open_alerts;
+        document.getElementById("metricEvents").textContent = state.overview.metrics.indexed_events;
+        document.getElementById("metricAssets").textContent = state.overview.metrics.known_assets;
+        document.getElementById("metricCritical").textContent = state.overview.metrics.critical_assets;
+        document.getElementById("socStatus").textContent = "online";
+        document.getElementById("searchStatus").textContent = state.overview.status;
+        document.getElementById("grafanaLink").href = state.overview.links.grafana;
+        document.getElementById("dashboardsLink").href = state.overview.links.opensearch_dashboards;
+        state.events = state.overview.recent_events || [];
+        renderEvents("alertsBody", state.events);
+        renderAgg("moduleList", state.overview.modules || []);
+        renderAgg("serviceList", state.overview.services || []);
+        renderAssets(state.overview.high_risk_assets || []);
+      }
+
+      async function runHunt() {
+        const query = document.getElementById("huntQuery").value;
+        const response = await fetch(`/api/events?q=${encodeURIComponent(query)}&size=50`);
+        const data = await response.json();
+        renderEvents("huntBody", data.events || []);
+      }
+
+      document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+      document.getElementById("runHunt").addEventListener("click", () => setView("hunt"));
+      document.getElementById("huntQuery").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") setView("hunt");
+      });
+
+      loadOverview().catch((error) => {
+        document.getElementById("socStatus").textContent = "degraded";
+        document.getElementById("contextPanel").textContent = error.message;
+      });
+    </script>
   </body>
 </html>

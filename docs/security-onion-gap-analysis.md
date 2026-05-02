@@ -38,7 +38,7 @@ SentinelMesh already aligns with several Security Onion principles:
 | Sensor ingest | Sensor forwards Zeek, Suricata, and syslog through an agent/pipeline to Logstash/search. | Suricata/Zeek containers exist. Logstash can read Suricata/Zeek-shaped JSON from sensor log volumes and index into OpenSearch. | Seeded event ingest exists; live capture and distributed forwarding are still incomplete. | P0 |
 | Packet capture | Stenographer or Suricata writes full packet capture locally on sensors; SOC can pivot to PCAP. | Arkime/Stenographer are placeholders; replay script exists. | No working rolling PCAP spool or retrieval workflow. | P0 |
 | Search datastore | Elasticsearch-backed search nodes receive parsed logs from Logstash. | OpenSearch exists with initial templates and MVP `sentinelmesh-events-*` Logstash output. | Mappings are not production-ready; no volume sizing or lifecycle policy. | P0 |
-| SOC analyst UX | SOC includes Alerts, Dashboards, Hunt, Cases, Detections, PCAP, Grid, and pivots to external tools. | Static SOC portal scaffold plus OpenSearch Dashboards and Grafana. | No real Alerts/Hunt/Cases/PCAP/Grid workflow. | P1 |
+| SOC analyst UX | SOC includes Alerts, Dashboards, Hunt, Cases, Detections, PCAP, Grid, and pivots to external tools. | MVP SOC portal now has Security Onion-style navigation, OpenSearch-backed overview/hunt, asset context, and pivot placeholders. | Needs auth, persistent cases, detection tuning, PCAP API, and analyst state. | P1 |
 | Detection management | Detections manages NIDS, Sigma, and YARA rules, tuning, synchronization, and playbooks. | Rule directories and `sm-update-rules` manifest workflow exist. | No rule compiler/sync engine, tuning UI, or alerting engine integration. | P1 |
 | Endpoint visibility | Elastic Agent, Fleet, osquery, and endpoint logs are supported. | Sensor enrollment exists; no endpoint agent management. | No host telemetry path, osquery/live query, or Fleet-like control plane. | P2 |
 | Syslog ingestion | Syslog is part of common ingest flows. | No dedicated syslog receiver config yet. | Network devices cannot send logs into the stack cleanly. | P1 |
@@ -121,6 +121,12 @@ Done when:
 
 - An analyst can move from alert to hunt to PCAP to case without leaving the SentinelMesh workflow.
 - Case records persist and can link back to source events.
+
+Progress:
+
+- SOC portal service now exposes `/api/overview`, `/api/events`, `/api/assets`, and `/api/health`.
+- SOC UI now includes Alerts, Dashboards, Hunt, Cases, Detections, PCAP, Grid, and Assets navigation.
+- Events can pivot from alert rows to Hunt and PCAP placeholder context.
 
 ### Phase D - Detection Engineering And Rule Lifecycle
 

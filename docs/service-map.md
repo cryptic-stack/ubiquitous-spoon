@@ -317,6 +317,47 @@ Health checks:
 - Cluster health endpoint reachable
 - SentinelMesh index templates installed
 
+## SOC Portal
+
+Profiles:
+
+- standalone
+- manager
+- manager-search
+- cyber-range
+- dev-lab
+
+Purpose:
+
+Operator dashboard and workflow entry point. The MVP mirrors the Security Onion analyst navigation pattern with Alerts, Dashboards, Hunt, Cases, Detections, PCAP, Grid, and Assets.
+
+Inputs:
+
+- Browser requests
+- OpenSearch event queries
+- Seed asset context
+
+Outputs:
+
+- SOC web UI
+- Same-origin `/api/overview`, `/api/events`, `/api/assets`, and `/api/health` JSON
+
+Data path:
+
+- Static UI: `/portal`
+- API service: `services/soc-portal`
+
+Logs:
+
+- Docker logs for `sm-soc`
+
+Health checks:
+
+- Container running
+- HTTP endpoint returns OK
+- `/api/health` returns OK
+- `/api/overview` can summarize event and asset context
+
 ## Asset Context
 
 Profiles:

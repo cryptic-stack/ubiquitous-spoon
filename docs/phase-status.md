@@ -50,13 +50,13 @@ Done:
 - `smbridge` network and `sm-*` container names are defined.
 - Initial services include Suricata, Zeek, Vector, Redis, Logstash, OpenSearch, Dashboards, SOC placeholder, range placeholder, and asset context.
 - Arkime and Stenographer placeholder containers exist.
-- SOC portal static scaffold exists.
+- SOC portal MVP application exists with overview, alerts, hunt, dashboards, cases, detections, PCAP, grid, and asset views.
 - Prometheus, Grafana, and connection metrics services exist.
 - Logstash has an MVP file ingest path from Suricata and Zeek log volumes into OpenSearch.
 
 Remaining:
 
-- Replace static SOC portal scaffold with real application/API.
+- Add authentication, persistent cases, and analyst state to SOC portal.
 - Replace Arkime and Stenographer placeholders with final images/configuration.
 - Decide final collector model: Vector, Elastic Agent, or hybrid.
 - Add live traffic and PCAP replay validation for the Logstash ingest path.
@@ -195,11 +195,13 @@ Done:
 - Relationship metrics and dashboard provisioning exist.
 - `sm-seed-nsm-events` can seed Suricata and Zeek-shaped validation events into the ingest path.
 - `sm-process-pcap` can process PCAPs through Suricata and Zeek into the Logstash ingest path.
+- SOC portal has MVP OpenSearch-backed overview, event hunt, asset context, and pivot views.
 
 Remaining:
 
 - Extend real ingest pipelines from seeded validation to live sensor output.
 - Add dashboard saved objects.
+- Add persistent alert/case workflow state.
 - Validate enrollment tokens through the manager service.
 - Add rule management placeholder.
 

@@ -111,17 +111,28 @@ services:
       - opensearch
 
   soc-portal:
-    image: nginx:alpine
+    image: python:3.12-slim
     container_name: sm-soc
     profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
     networks:
       smbridge:
         aliases:
           - soc
+    environment:
+      SENTINELMESH_SOC_PORT: "8080"
+      SENTINELMESH_SOC_STATIC_DIR: "/portal"
+      SENTINELMESH_OPENSEARCH_URL: "${SENTINELMESH_OPENSEARCH_URL:-http://opensearch:9200}"
+      SENTINELMESH_EVENT_INDEX_PATTERN: "${SENTINELMESH_EVENT_INDEX_PATTERN:-sentinelmesh-events-*}"
+      SENTINELMESH_ASSET_SEED_PATH: "/seeds/sample-assets.json"
     ports:
-      - "${SOC_PORTAL_PORT:-8080}:80"
+      - "${SOC_PORTAL_PORT:-8080}:8080"
     volumes:
-      - ../configs/portal:/usr/share/nginx/html:ro
+      - ../services/soc-portal:/app:ro
+      - ../configs/portal:/portal:ro
+      - ../services/asset-context/sample-assets.json:/seeds/sample-assets.json:ro
+    command: ["python", "/app/soc_portal.py"]
+    depends_on:
+      - opensearch
 
   asset-context:
     image: python:3.12-slim

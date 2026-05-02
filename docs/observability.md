@@ -58,6 +58,8 @@ It mirrors the Security Onion Dashboards pattern as closely as Prometheus and Gr
 - Event table sourced from the SOC JSON API
 - Relationship context table sourced from the SOC JSON API
 
+The SOC portal embeds the SOC Overview and Asset Relationships Grafana dashboards on the main Alerts view and the Dashboards view. The local Grafana service enables frame embedding and anonymous Viewer access in Compose so operators can see the graphs in the SOC console without opening a separate Grafana page.
+
 Security Onion's Dashboards page is still more interactive for ad hoc OQL, recursive groupby, row expansion, and context menus. SentinelMesh keeps those analyst pivots in the SOC portal while Grafana provides durable wallboard-style visualizations and trend panels.
 
 ## Event-Derived Relationship Context

@@ -513,6 +513,7 @@ Outputs:
 
 - Grafana web UI
 - Provisioned SentinelMesh relationship dashboard
+- Embedded SOC portal dashboard frames for local operator workflows
 
 Data path:
 
@@ -527,6 +528,7 @@ Health checks:
 - Container running
 - Grafana HTTP endpoint returns OK
 - Provisioned dashboard is available
+- Embedded dashboards render in the SOC portal
 
 ## Firstboot Reminder
 

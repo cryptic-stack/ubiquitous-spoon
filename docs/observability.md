@@ -45,6 +45,20 @@ It includes:
 - Asset connection table
 - Relationship edge feed from `/graph/assets`
 
+The SOC overview dashboard is provisioned from:
+
+- `configs/grafana/dashboards/sentinelmesh-soc-overview.json`
+
+It mirrors the Security Onion Dashboards pattern as closely as Prometheus and Grafana allow:
+
+- Basic metrics for indexed events, alerts, and highest asset risk
+- Timeline for current indexed event and alert counts
+- Group metrics for `event.module`, `event_type`, `source.ip`, `destination.ip`, and destination port
+- Event table sourced from the SOC JSON API
+- Relationship context table sourced from the relationship graph API
+
+Security Onion's Dashboards page is still more interactive for ad hoc OQL, recursive groupby, row expansion, and context menus. SentinelMesh keeps those analyst pivots in the SOC portal while Grafana provides durable wallboard-style visualizations and trend panels.
+
 ## Design Boundary
 
 Prometheus is the time-series metrics store. It is not the authoritative relationship database.

@@ -196,6 +196,7 @@ Done:
 - `sm-seed-nsm-events` can seed Suricata and Zeek-shaped validation events into the ingest path.
 - `sm-process-pcap` can process PCAPs through Suricata and Zeek into the Logstash ingest path.
 - SOC portal has MVP OpenSearch-backed overview, event hunt, asset context, and pivot views.
+- Grafana has a Security Onion-inspired SOC overview dashboard backed by SOC Prometheus metrics and SOC JSON events.
 
 Remaining:
 

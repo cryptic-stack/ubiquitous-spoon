@@ -69,6 +69,10 @@ class SocPortalTests(unittest.TestCase):
         )
         self.assertEqual(asset["risk_score"], 100)
 
+    def test_metric_line_escapes_label_values(self):
+        line = soc_portal.metric_line("sentinelmesh_test", {"field": 'a"b'}, 3)
+        self.assertEqual(line, 'sentinelmesh_test{field="a\\"b"} 3')
+
 
 if __name__ == "__main__":
     unittest.main()

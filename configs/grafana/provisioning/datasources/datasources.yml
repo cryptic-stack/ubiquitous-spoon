@@ -15,3 +15,10 @@ datasources:
     access: proxy
     url: http://connection-metrics:9105
     editable: true
+
+  - name: SentinelMesh SOC JSON
+    type: marcusolsson-json-datasource
+    uid: sentinelmesh-soc-json
+    access: proxy
+    url: http://soc:8080
+    editable: true

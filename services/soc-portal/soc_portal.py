@@ -87,7 +87,6 @@ def terms_aggregation(field: str, size: int = 10) -> list[dict[str, Any]]:
                 "terms": {
                     "field": field,
                     "size": size,
-                    "missing": "unknown",
                 }
             }
         },
@@ -95,6 +94,79 @@ def terms_aggregation(field: str, size: int = 10) -> list[dict[str, Any]]:
     response = opensearch_request("POST", f"/{EVENT_INDEX}/_search", body)
     buckets = response.get("aggregations", {}).get("values", {}).get("buckets", [])
     return [{"key": bucket.get("key"), "count": bucket.get("doc_count", 0)} for bucket in buckets]
+
+
+def soc_metrics_text() -> str:
+    try:
+        total_events = count_events()
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        total_events = 0
+
+    try:
+        alerts = count_events({"match": {"event_type": "alert"}})
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        alerts = 0
+
+    rollups = {
+        "sentinelmesh_soc_event_module_count": safe_terms("event.module", 20),
+        "sentinelmesh_soc_event_dataset_count": safe_terms("event.dataset", 20),
+        "sentinelmesh_soc_event_type_count": safe_terms("event_type.keyword", 20),
+        "sentinelmesh_soc_source_ip_count": safe_terms("source.ip", 20),
+        "sentinelmesh_soc_destination_ip_count": safe_terms("destination.ip", 20),
+        "sentinelmesh_soc_destination_port_count": safe_terms("dest_port", 20),
+    }
+
+    lines = [
+        "# HELP sentinelmesh_soc_indexed_events Current SentinelMesh indexed event count.",
+        "# TYPE sentinelmesh_soc_indexed_events gauge",
+        f"sentinelmesh_soc_indexed_events {total_events}",
+        "# HELP sentinelmesh_soc_alert_events Current SentinelMesh alert event count.",
+        "# TYPE sentinelmesh_soc_alert_events gauge",
+        f"sentinelmesh_soc_alert_events {alerts}",
+    ]
+
+    help_text = {
+        "sentinelmesh_soc_event_module_count": "Current event count grouped by module.",
+        "sentinelmesh_soc_event_dataset_count": "Current event count grouped by dataset.",
+        "sentinelmesh_soc_event_type_count": "Current event count grouped by event type.",
+        "sentinelmesh_soc_source_ip_count": "Current event count grouped by source IP.",
+        "sentinelmesh_soc_destination_ip_count": "Current event count grouped by destination IP.",
+        "sentinelmesh_soc_destination_port_count": "Current event count grouped by destination port.",
+    }
+
+    label_name = {
+        "sentinelmesh_soc_event_module_count": "module",
+        "sentinelmesh_soc_event_dataset_count": "dataset",
+        "sentinelmesh_soc_event_type_count": "event_type",
+        "sentinelmesh_soc_source_ip_count": "source_ip",
+        "sentinelmesh_soc_destination_ip_count": "destination_ip",
+        "sentinelmesh_soc_destination_port_count": "destination_port",
+    }
+
+    for metric_name, values in rollups.items():
+        lines.append(f"# HELP {metric_name} {help_text[metric_name]}")
+        lines.append(f"# TYPE {metric_name} gauge")
+        label = label_name[metric_name]
+        for item in values:
+            lines.append(metric_line(metric_name, {label: item["key"]}, item["count"]))
+
+    return "\n".join(lines) + "\n"
+
+
+def safe_terms(field: str, size: int) -> list[dict[str, Any]]:
+    try:
+        return terms_aggregation(field, size=size)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        return []
+
+
+def metric_line(name: str, labels: dict[str, Any], value: Any) -> str:
+    label_text = ",".join(f'{key}="{label_value(val)}"' for key, val in labels.items())
+    return f"{name}{{{label_text}}} {value}"
+
+
+def label_value(value: Any) -> str:
+    return str(value).replace("\\", "\\\\").replace('"', '\\"')
 
 
 def format_event(hit: dict[str, Any]) -> dict[str, Any]:
@@ -215,7 +287,7 @@ def overview_payload() -> dict[str, Any]:
         "modules": modules,
         "services": services,
         "links": {
-            "grafana": "http://localhost:3000/d/sentinelmesh-relationships/sentinelmesh-relationships",
+            "grafana": "http://localhost:3000/d/sentinelmesh-soc-overview/sentinelmesh-soc-overview",
             "opensearch_dashboards": "http://localhost:5601",
             "opensearch": "http://localhost:9200",
         },
@@ -292,6 +364,16 @@ class SocHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/health":
             response_json(self, {"status": "ok", "service": "soc-portal"})
+            return
+
+        if parsed.path == "/metrics":
+            body = soc_metrics_text().encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; version=0.0.4")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
             return
 
         if parsed.path == "/api/overview":

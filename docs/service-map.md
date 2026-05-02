@@ -341,6 +341,7 @@ Outputs:
 
 - SOC web UI
 - Same-origin `/api/overview`, `/api/events`, `/api/assets`, and `/api/health` JSON
+- Prometheus metrics at `/metrics` for dashboard rollups
 
 Data path:
 
@@ -357,6 +358,7 @@ Health checks:
 - HTTP endpoint returns OK
 - `/api/health` returns OK
 - `/api/overview` can summarize event and asset context
+- Prometheus can scrape `/metrics`
 
 ## Asset Context
 

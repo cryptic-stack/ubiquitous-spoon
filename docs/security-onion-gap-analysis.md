@@ -127,6 +127,7 @@ Progress:
 - SOC portal service now exposes `/api/overview`, `/api/events`, `/api/assets`, and `/api/health`.
 - SOC UI now includes Alerts, Dashboards, Hunt, Cases, Detections, PCAP, Grid, and Assets navigation.
 - Events can pivot from alert rows to Hunt and PCAP placeholder context.
+- Grafana SOC Overview mirrors Security Onion Dashboards with basic metrics, timeline, group metrics, event table, and relationship context.
 
 ### Phase D - Detection Engineering And Rule Lifecycle
 

@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: SentinelMesh Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: SentinelMesh Relationships JSON
+    type: marcusolsson-json-datasource
+    uid: sentinelmesh-relationships-json
+    access: proxy
+    url: http://connection-metrics:9105
+    editable: true

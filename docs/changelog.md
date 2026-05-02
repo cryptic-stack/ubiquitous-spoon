@@ -53,3 +53,5 @@
 - Implemented safe network and storage intent writers.
 - Added vulnerability import schema, sample import, and staging command.
 - Replaced SOC placeholder page with a static operator dashboard scaffold.
+- Added Prometheus, Grafana, and connection metrics service for relationship visualization.
+- Added Grafana provisioning and default SentinelMesh relationship dashboard.

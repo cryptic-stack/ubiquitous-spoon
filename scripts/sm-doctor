@@ -60,13 +60,13 @@ profile_containers() {
   local profile="$1"
   case "$profile" in
     standalone)
-      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-connection-metrics sm-prometheus sm-grafana"
       ;;
     manager)
-      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-connection-metrics sm-prometheus sm-grafana"
       ;;
     manager-search)
-      echo "sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      echo "sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-connection-metrics sm-prometheus sm-grafana"
       ;;
     search)
       echo "sm-logstash sm-opensearch"
@@ -78,10 +78,10 @@ profile_containers() {
       echo "sm-redis sm-logstash"
       ;;
     cyber-range)
-      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-opensearch sm-dashboards sm-soc sm-asset-context sm-range-engine"
+      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-opensearch sm-dashboards sm-soc sm-asset-context sm-connection-metrics sm-prometheus sm-grafana sm-range-engine"
       ;;
     dev-lab)
-      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-range-engine"
+      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-connection-metrics sm-prometheus sm-grafana sm-range-engine"
       ;;
     *)
       echo ""

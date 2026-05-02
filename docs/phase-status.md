@@ -49,6 +49,7 @@ Done:
 - Initial services include Suricata, Zeek, Vector, Redis, Logstash, OpenSearch, Dashboards, SOC placeholder, range placeholder, and asset context.
 - Arkime and Stenographer placeholder containers exist.
 - SOC portal static scaffold exists.
+- Prometheus, Grafana, and connection metrics services exist.
 
 Remaining:
 
@@ -184,6 +185,8 @@ Done:
 - Sensor enrollment service placeholder exists.
 - Manager-side enrollment token script exists.
 - Sensor-side enrollment config script exists.
+- Prometheus and Grafana observability stack exists.
+- Relationship metrics and dashboard provisioning exist.
 
 Remaining:
 

@@ -1,0 +1,20 @@
+[
+  {
+    "src_asset": "range-dc-01",
+    "dst_asset": "internet-vpn-peer",
+    "dst_ip": "203.0.113.25",
+    "dst_port": "443",
+    "protocol": "tcp",
+    "count": 12,
+    "weight": 12
+  },
+  {
+    "src_asset": "range-dc-01",
+    "dst_asset": "range-files-01",
+    "dst_ip": "192.168.56.20",
+    "dst_port": "445",
+    "protocol": "tcp",
+    "count": 7,
+    "weight": 7
+  }
+]

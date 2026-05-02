@@ -158,6 +158,63 @@ services:
       - ../services/sensor-enrollment:/app:ro
       - sentinelmesh-enrollment:/enrollment
 
+  connection-metrics:
+    image: python:3.12-slim
+    container_name: sm-connection-metrics
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - connection-metrics
+    environment:
+      SENTINELMESH_CONNECTION_METRICS_PORT: "${SENTINELMESH_CONNECTION_METRICS_PORT:-9105}"
+      SENTINELMESH_ASSET_SEED_PATH: "${SENTINELMESH_ASSET_SEED_PATH:-/seeds/sample-assets.json}"
+      SENTINELMESH_CONNECTION_SEED_PATH: "${SENTINELMESH_CONNECTION_SEED_PATH:-/app/sample-connections.json}"
+    ports:
+      - "${CONNECTION_METRICS_PORT:-9105}:9105"
+    command: ["python", "/app/connection_metrics.py"]
+    volumes:
+      - ../services/connection-metrics:/app:ro
+      - ../services/asset-context/sample-assets.json:/seeds/sample-assets.json:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sm-prometheus
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - sentinelmesh-prometheus:/prometheus
+    depends_on:
+      - connection-metrics
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sm-grafana
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-sentinelmesh}"
+      GF_INSTALL_PLUGINS: "marcusolsson-json-datasource"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ../configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - sentinelmesh-grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - connection-metrics
+
   range-engine:
     image: python:3.12-slim
     container_name: sm-range-engine
@@ -186,3 +243,5 @@ volumes:
   sentinelmesh-opensearch:
   sentinelmesh-redis:
   sentinelmesh-enrollment:
+  sentinelmesh-prometheus:
+  sentinelmesh-grafana:

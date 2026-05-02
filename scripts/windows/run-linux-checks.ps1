@@ -20,8 +20,8 @@ $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "../..")
 Write-Host "Running Bash syntax checks in Docker..."
 docker run --rm -v "${RepoRoot}:/repo" -w /repo bash:5.2 bash ./tests/test-scripts.sh
 
-Write-Host "Running Python syntax and schema checks in Docker..."
-docker run --rm -v "${RepoRoot}:/repo" -w /repo python:3.12-slim sh -c "./tests/test-python.sh && ./tests/test-schemas.sh"
+Write-Host "Running Python syntax, schema, and YAML checks in Docker..."
+docker run --rm -v "${RepoRoot}:/repo" -w /repo python:3.12-slim sh -c "pip install --quiet pyyaml && ./tests/test-python.sh && ./tests/test-schemas.sh && ./tests/test-yaml.sh"
 
 Write-Host "Running autoinstall YAML validation in Docker..."
 docker run --rm -v "${RepoRoot}:/repo" -w /repo python:3.12-alpine sh -c "pip install --quiet pyyaml && python - <<'PY'

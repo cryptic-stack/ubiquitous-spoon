@@ -97,6 +97,7 @@ Documentation is part of the build. Every meaningful change should update at lea
 - `docs/sensor-enrollment.md`
 - `docs/operations.md`
 - `docs/iso-testing.md`
+- `docs/observability.md`
 
 Codex-specific implementation guidance lives in:
 

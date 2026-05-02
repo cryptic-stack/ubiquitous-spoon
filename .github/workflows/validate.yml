@@ -28,6 +28,9 @@ jobs:
       - name: Validate JSON schemas
         run: ./tests/test-schemas.sh
 
+      - name: Validate YAML configs
+        run: ./tests/test-yaml.sh
+
       - name: Validate autoinstall YAML
         run: ./tests/test-autoinstall.sh
 

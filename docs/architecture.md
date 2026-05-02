@@ -66,6 +66,8 @@ Standalone NSM:
 - Redis
 - OpenSearch
 - OpenSearch Dashboards
+- Prometheus
+- Grafana
 - SOC portal
 - Asset context engine
 
@@ -73,6 +75,8 @@ Manager / Search Node:
 
 - OpenSearch
 - OpenSearch Dashboards
+- Prometheus
+- Grafana
 - SOC portal
 - Logstash
 - Redis
@@ -128,6 +132,8 @@ Developer / Lab Node:
 
 - Lightweight OpenSearch
 - Dashboards
+- Prometheus
+- Grafana
 - SOC portal placeholder
 - Range engine placeholder
 - Sample data hooks

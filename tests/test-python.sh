@@ -7,8 +7,10 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 python3 -m py_compile services/asset-context/asset_context.py
+python3 -m py_compile services/connection-metrics/connection_metrics.py
 python3 -m py_compile services/range-engine/range_engine.py
 python3 -m py_compile services/sensor-enrollment/enrollment_service.py
 python3 tests/test-asset-context.py
+python3 tests/test-connection-metrics.py
 
 echo "Python syntax checks passed."

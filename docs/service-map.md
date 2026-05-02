@@ -355,6 +355,120 @@ Health checks:
 - Risk scoring tests pass in CI
 - Asset and event index templates exist
 
+## Connection Metrics
+
+Profiles:
+
+- standalone
+- manager
+- manager-search
+- cyber-range
+- dev-lab
+
+Purpose:
+
+Expose SentinelMesh asset connection and risk metrics for Prometheus and relationship graph JSON for Grafana.
+
+Inputs:
+
+- Seed asset data
+- Seed connection data
+- Future Zeek, Suricata, Arkime, and OpenSearch-derived relationships
+
+Outputs:
+
+- Prometheus `/metrics`
+- Relationship graph JSON at `/graph/assets`
+
+Data path:
+
+- `services/connection-metrics`
+
+Logs:
+
+- Docker logs for `sm-connection-metrics`
+
+Health checks:
+
+- Container running
+- `/health` returns OK
+- Prometheus can scrape `/metrics`
+
+## Prometheus
+
+Profiles:
+
+- standalone
+- manager
+- manager-search
+- cyber-range
+- dev-lab
+
+Purpose:
+
+Store time-series metrics for SentinelMesh observability and relationship charts.
+
+Inputs:
+
+- `connection-metrics`
+- Future SentinelMesh exporters
+
+Outputs:
+
+- Prometheus query API
+- Grafana datasource
+
+Data path:
+
+- Docker volume `sentinelmesh-prometheus`
+
+Logs:
+
+- Docker logs for `sm-prometheus`
+
+Health checks:
+
+- Container running
+- Target `connection-metrics` is healthy
+
+## Grafana
+
+Profiles:
+
+- standalone
+- manager
+- manager-search
+- cyber-range
+- dev-lab
+
+Purpose:
+
+Visualize SentinelMesh metrics, asset relationships, risk scores, and operational dashboards.
+
+Inputs:
+
+- Prometheus datasource
+- Connection metrics JSON datasource
+
+Outputs:
+
+- Grafana web UI
+- Provisioned SentinelMesh relationship dashboard
+
+Data path:
+
+- Docker volume `sentinelmesh-grafana`
+
+Logs:
+
+- Docker logs for `sm-grafana`
+
+Health checks:
+
+- Container running
+- Grafana HTTP endpoint returns OK
+- Provisioned dashboard is available
+
 ## Firstboot Reminder
 
 Profiles:

@@ -48,6 +48,8 @@ Use this file as the working notebook for implementation details, rough edges, t
 - Replaced network and storage placeholders with safe configuration writers that do not apply risky network changes automatically.
 - Added vulnerability import staging as the next step toward continuous vulnerability awareness.
 - Replaced the basic SOC portal placeholder with a static dashboard scaffold.
+- Added Prometheus and Grafana as the default observability stack.
+- Added seeded asset relationship metrics and Grafana relationship dashboard provisioning.
 
 ## Open Questions
 

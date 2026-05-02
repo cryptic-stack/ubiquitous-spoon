@@ -10,6 +10,7 @@ set -euo pipefail
 ./tests/test-scripts.sh
 ./tests/test-python.sh
 ./tests/test-schemas.sh
+./tests/test-yaml.sh
 ./tests/test-autoinstall.sh
 ./tests/test-ansible.sh
 ./tests/test-packer.sh

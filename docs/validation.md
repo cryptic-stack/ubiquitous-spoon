@@ -17,6 +17,7 @@ This performs:
 - Docker-backed Bash syntax checks
 - Docker-backed Python syntax checks
 - Docker-backed JSON parsing for schemas, OpenSearch templates, and examples
+- Docker-backed YAML parsing for Prometheus and Grafana provisioning
 - Docker-backed autoinstall YAML validation
 
 Use this when Ubuntu WSL is not ready yet but Docker Desktop is working.
@@ -34,6 +35,7 @@ This performs:
 - Bash syntax checks
 - Python syntax checks
 - JSON parsing for schemas, OpenSearch templates, and examples
+- YAML parsing for Prometheus and Grafana provisioning
 - Autoinstall YAML validation
 - Ansible syntax check when Ansible is installed
 - Docker Compose profile validation

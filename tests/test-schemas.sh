@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 json_paths = list(Path("schemas").glob("*.json"))
+json_paths.extend(Path("configs/grafana/dashboards").glob("*.json"))
 json_paths.extend(Path("configs/opensearch/index-templates").glob("*.json"))
 json_paths.extend(Path("examples").glob("**/*.json"))
 

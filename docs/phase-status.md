@@ -197,6 +197,7 @@ Done:
 - `sm-process-pcap` can process PCAPs through Suricata and Zeek into the Logstash ingest path.
 - SOC portal has MVP OpenSearch-backed overview, event hunt, asset context, and pivot views.
 - Grafana has a Security Onion-inspired SOC overview dashboard backed by SOC Prometheus metrics and SOC JSON events.
+- SOC portal exposes event-derived relationship APIs and UI backed by the same hunt queries used for event review.
 
 Remaining:
 

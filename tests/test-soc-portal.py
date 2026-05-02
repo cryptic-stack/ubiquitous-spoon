@@ -73,6 +73,58 @@ class SocPortalTests(unittest.TestCase):
         line = soc_portal.metric_line("sentinelmesh_test", {"field": 'a"b'}, 3)
         self.assertEqual(line, 'sentinelmesh_test{field="a\\"b"} 3')
 
+    def test_relationship_payload_enriches_event_pairs_with_asset_context(self):
+        original_search_events = soc_portal.search_events
+        original_load_seed_assets = soc_portal.load_seed_assets
+
+        def fake_search_events(query, size=25):
+            return [
+                {
+                    "time": "2026-05-02T18:00:00Z",
+                    "source_ip": "10.10.10.25",
+                    "destination_ip": "203.0.113.25",
+                    "destination_port": 443,
+                    "protocol": "tcp",
+                    "risk": "high",
+                },
+                {
+                    "time": "2026-05-02T18:05:00Z",
+                    "source_ip": "10.10.10.25",
+                    "destination_ip": "203.0.113.25",
+                    "destination_port": 443,
+                    "protocol": "tcp",
+                    "risk": "critical",
+                },
+            ]
+
+        def fake_load_seed_assets():
+            return [
+                {
+                    "asset_id": "asset-1",
+                    "hostnames": ["range-dc-01"],
+                    "ip_addresses": ["10.10.10.25"],
+                    "criticality": "critical",
+                    "risk_score": 95,
+                    "vulnerabilities": [{"severity": "critical"}],
+                }
+            ]
+
+        try:
+            soc_portal.search_events = fake_search_events
+            soc_portal.load_seed_assets = fake_load_seed_assets
+            payload = soc_portal.relationship_payload({"match_all": {}}, size=25)
+        finally:
+            soc_portal.search_events = original_search_events
+            soc_portal.load_seed_assets = original_load_seed_assets
+
+        self.assertEqual(len(payload["relationships"]), 1)
+        relationship = payload["relationships"][0]
+        self.assertEqual(relationship["source_asset"], "range-dc-01")
+        self.assertEqual(relationship["destination_asset"], "203.0.113.25")
+        self.assertEqual(relationship["count"], 2)
+        self.assertEqual(relationship["highest_risk"], "critical")
+        self.assertTrue(any(node["id"] == "range-dc-01" for node in payload["nodes"]))
+
 
 if __name__ == "__main__":
     unittest.main()

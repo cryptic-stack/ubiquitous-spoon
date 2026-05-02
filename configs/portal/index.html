@@ -281,6 +281,7 @@
         <button class="active" data-view="alerts">Alerts</button>
         <button data-view="dashboards">Dashboards</button>
         <button data-view="hunt">Hunt</button>
+        <button data-view="relationships">Relationships</button>
         <button data-view="cases">Cases</button>
         <button data-view="detections">Detections</button>
         <button data-view="pcap">PCAP</button>
@@ -365,6 +366,18 @@
           </div>
         </section>
 
+        <section id="relationships" class="view">
+          <div class="panel">
+            <h2>Relationship Hunt</h2>
+            <table>
+              <thead>
+                <tr><th>Source Asset</th><th>Destination Asset</th><th>Destination</th><th>Protocol</th><th>Events</th><th>Risk</th><th>Last Seen</th></tr>
+              </thead>
+              <tbody id="relationshipsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section id="cases" class="view">
           <div class="panel">
             <h2>Cases</h2>
@@ -419,7 +432,7 @@
     </main>
 
     <script>
-      const state = { overview: null, events: [], assets: [] };
+      const state = { overview: null, events: [], assets: [], relationships: [] };
 
       function text(value) {
         return value === undefined || value === null || value === "" ? "-" : String(value);
@@ -429,6 +442,7 @@
         document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
         document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === name));
         if (name === "hunt") runHunt();
+        if (name === "relationships") loadRelationships();
       }
 
       function rowEvent(event) {
@@ -499,6 +513,21 @@
           : `<tr><td colspan="6" class="muted">No asset context loaded.</td></tr>`;
       }
 
+      function renderRelationships(relationships) {
+        document.getElementById("relationshipsBody").innerHTML = relationships.length
+          ? relationships.map((relationship) => `
+              <tr>
+                <td>${text(relationship.source_asset)}</td>
+                <td>${text(relationship.destination_asset)}</td>
+                <td>${text(relationship.destination)}:${text(relationship.destination_port)}</td>
+                <td>${text(relationship.protocol)}</td>
+                <td>${text(relationship.count)}</td>
+                <td class="${text(relationship.highest_risk)}">${text(relationship.highest_risk)}</td>
+                <td>${text(relationship.last_seen)}</td>
+              </tr>`).join("")
+          : `<tr><td colspan="7" class="muted">No event-derived relationships found.</td></tr>`;
+      }
+
       async function loadOverview() {
         const response = await fetch("/api/overview");
         state.overview = await response.json();
@@ -522,6 +551,14 @@
         const response = await fetch(`/api/events?q=${encodeURIComponent(query)}&size=50`);
         const data = await response.json();
         renderEvents("huntBody", data.events || []);
+      }
+
+      async function loadRelationships() {
+        const query = document.getElementById("huntQuery").value;
+        const response = await fetch(`/api/relationships?q=${encodeURIComponent(query)}&size=250`);
+        const data = await response.json();
+        state.relationships = data.relationships || [];
+        renderRelationships(state.relationships);
       }
 
       document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));

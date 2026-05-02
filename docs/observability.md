@@ -27,6 +27,7 @@ The first Prometheus metrics are:
 - `sentinelmesh_asset_risk_score`
 - `sentinelmesh_asset_vulnerability_count`
 - `sentinelmesh_relationship_weight`
+- `sentinelmesh_soc_relationship_observed_count`
 
 The MVP metrics are seeded from sample asset and connection data. Future versions will consume Zeek, Suricata, Arkime, and OpenSearch data.
 
@@ -55,9 +56,24 @@ It mirrors the Security Onion Dashboards pattern as closely as Prometheus and Gr
 - Timeline for current indexed event and alert counts
 - Group metrics for `event.module`, `event_type`, `source.ip`, `destination.ip`, and destination port
 - Event table sourced from the SOC JSON API
-- Relationship context table sourced from the relationship graph API
+- Relationship context table sourced from the SOC JSON API
 
 Security Onion's Dashboards page is still more interactive for ad hoc OQL, recursive groupby, row expansion, and context menus. SentinelMesh keeps those analyst pivots in the SOC portal while Grafana provides durable wallboard-style visualizations and trend panels.
+
+## Event-Derived Relationship Context
+
+The SOC portal exposes relationship data derived from indexed events:
+
+- `GET /api/relationships?q=<hunt query>&size=250`
+- `GET /graph/soc/assets?q=<hunt query>&size=250`
+
+The payload includes:
+
+- `nodes`: source and destination assets or IPs with risk context when known
+- `edges`: Grafana-friendly source-to-target relationship records
+- `relationships`: table-oriented rows with source asset, destination asset, destination IP, port, protocol, event count, highest risk, and last seen
+
+The SOC Prometheus scrape also emits `sentinelmesh_soc_relationship_observed_count` so Grafana can show top observed communication pairs from the same OpenSearch-backed event stream used by Hunt.
 
 ## Design Boundary
 

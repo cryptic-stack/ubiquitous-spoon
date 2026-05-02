@@ -561,7 +561,7 @@
     {
       "datasource": {
         "type": "marcusolsson-json-datasource",
-        "uid": "sentinelmesh-relationships-json"
+        "uid": "sentinelmesh-soc-json"
       },
       "fieldConfig": {
         "defaults": {},
@@ -582,30 +582,38 @@
           "cacheDurationSeconds": 30,
           "fields": [
             {
-              "jsonPath": "$.edges[*].source",
-              "name": "source"
+              "jsonPath": "$.relationships[*].source_asset",
+              "name": "source_asset"
             },
             {
-              "jsonPath": "$.edges[*].target",
-              "name": "target"
+              "jsonPath": "$.relationships[*].destination_asset",
+              "name": "destination_asset"
             },
             {
-              "jsonPath": "$.edges[*].protocol",
+              "jsonPath": "$.relationships[*].destination",
+              "name": "destination_ip"
+            },
+            {
+              "jsonPath": "$.relationships[*].protocol",
               "name": "protocol"
             },
             {
-              "jsonPath": "$.edges[*].dst_port",
+              "jsonPath": "$.relationships[*].destination_port",
               "name": "dst_port"
             },
             {
-              "jsonPath": "$.edges[*].weight",
-              "name": "weight"
+              "jsonPath": "$.relationships[*].count",
+              "name": "events"
+            },
+            {
+              "jsonPath": "$.relationships[*].highest_risk",
+              "name": "risk"
             }
           ],
           "method": "GET",
-          "queryParams": "",
+          "queryParams": "q=$hunt_query&size=250",
           "refId": "A",
-          "urlPath": "/graph/assets"
+          "urlPath": "/api/relationships"
         }
       ],
       "title": "Relationship Context",

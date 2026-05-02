@@ -1,6 +1,6 @@
 [
   {
-    "ip_addresses": ["192.168.56.10"],
+    "ip_addresses": ["192.168.56.10", "10.10.10.25"],
     "mac_addresses": ["00:11:22:33:44:55"],
     "hostnames": ["range-dc-01"],
     "fqdn": "range-dc-01.lab.local",

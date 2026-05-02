@@ -115,6 +115,7 @@ def soc_metrics_text() -> str:
         "sentinelmesh_soc_destination_ip_count": safe_terms("destination.ip", 20),
         "sentinelmesh_soc_destination_port_count": safe_terms("dest_port", 20),
     }
+    relationships = safe_relationships({"match_all": {}}, size=500)
 
     lines = [
         "# HELP sentinelmesh_soc_indexed_events Current SentinelMesh indexed event count.",
@@ -150,12 +151,32 @@ def soc_metrics_text() -> str:
         for item in values:
             lines.append(metric_line(metric_name, {label: item["key"]}, item["count"]))
 
+    lines.append("# HELP sentinelmesh_soc_relationship_observed_count Current event count grouped by network relationship.")
+    lines.append("# TYPE sentinelmesh_soc_relationship_observed_count gauge")
+    for relationship in relationships:
+        labels = {
+            "source": relationship["source"],
+            "destination": relationship["destination"],
+            "destination_port": relationship["destination_port"],
+            "protocol": relationship["protocol"],
+            "source_asset": relationship["source_asset"],
+            "destination_asset": relationship["destination_asset"],
+        }
+        lines.append(metric_line("sentinelmesh_soc_relationship_observed_count", labels, relationship["count"]))
+
     return "\n".join(lines) + "\n"
 
 
 def safe_terms(field: str, size: int) -> list[dict[str, Any]]:
     try:
         return terms_aggregation(field, size=size)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        return []
+
+
+def safe_relationships(query: dict[str, Any], size: int = 250) -> list[dict[str, Any]]:
+    try:
+        return relationship_payload(query, size=size)["relationships"]
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
         return []
 
@@ -189,6 +210,105 @@ def format_event(hit: dict[str, Any]) -> dict[str, Any]:
         "risk": event_risk(source),
         "pivots": build_pivots(source),
     }
+
+
+def asset_lookup_by_ip(assets: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    lookup: dict[str, dict[str, Any]] = {}
+    for asset in assets:
+        formatted = format_asset(asset)
+        for ip_address in formatted["ip_addresses"]:
+            lookup[str(ip_address)] = formatted
+    return lookup
+
+
+def relationship_payload(query: dict[str, Any], size: int = 250) -> dict[str, Any]:
+    events = search_events(query, size=min(size, 1000))
+    assets_by_ip = asset_lookup_by_ip(load_seed_assets())
+    nodes: dict[str, dict[str, Any]] = {}
+    relationships: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+
+    for event in events:
+        source = str(event.get("source_ip") or "")
+        destination = str(event.get("destination_ip") or "")
+        if not source or not destination:
+            continue
+
+        source_asset = assets_by_ip.get(source)
+        destination_asset = assets_by_ip.get(destination)
+        source_name = source_asset["name"] if source_asset else source
+        destination_name = destination_asset["name"] if destination_asset else destination
+        destination_port = str(event.get("destination_port") or "unknown")
+        protocol = str(event.get("protocol") or "unknown")
+
+        add_relationship_node(nodes, source, source_name, source_asset)
+        add_relationship_node(nodes, destination, destination_name, destination_asset)
+
+        key = (source_name, destination_name, destination_port, protocol)
+        relationship = relationships.setdefault(
+            key,
+            {
+                "id": f"{source_name}->{destination_name}:{destination_port}/{protocol}",
+                "source": source,
+                "destination": destination,
+                "source_asset": source_name,
+                "destination_asset": destination_name,
+                "destination_port": destination_port,
+                "protocol": protocol,
+                "count": 0,
+                "highest_risk": "low",
+                "last_seen": "",
+            },
+        )
+        relationship["count"] += 1
+        relationship["highest_risk"] = higher_risk(str(relationship["highest_risk"]), str(event.get("risk") or "low"))
+        relationship["last_seen"] = max(str(relationship["last_seen"]), str(event.get("time") or ""))
+
+    relationship_list = sorted(
+        relationships.values(),
+        key=lambda item: (int(item["count"]), str(item["last_seen"])),
+        reverse=True,
+    )
+    edges = [
+        {
+            "id": relationship["id"],
+            "source": relationship["source_asset"],
+            "target": relationship["destination_asset"],
+            "source_ip": relationship["source"],
+            "destination_ip": relationship["destination"],
+            "dst_port": relationship["destination_port"],
+            "protocol": relationship["protocol"],
+            "weight": relationship["count"],
+            "risk": relationship["highest_risk"],
+            "last_seen": relationship["last_seen"],
+        }
+        for relationship in relationship_list
+    ]
+    return {"nodes": list(nodes.values()), "edges": edges, "relationships": relationship_list}
+
+
+def add_relationship_node(
+    nodes: dict[str, dict[str, Any]],
+    ip_address: str,
+    name: str,
+    asset: dict[str, Any] | None,
+) -> None:
+    nodes.setdefault(
+        name,
+        {
+            "id": name,
+            "title": name,
+            "ip": ip_address,
+            "risk_score": asset["risk_score"] if asset else 0,
+            "criticality": asset["criticality"] if asset else "unknown",
+            "vulnerability_count": asset["vulnerability_count"] if asset else 0,
+            "internet_facing": asset["internet_facing"] if asset else False,
+        },
+    )
+
+
+def higher_risk(current: str, candidate: str) -> str:
+    ranks = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+    return candidate if ranks.get(candidate, 0) > ranks.get(current, 0) else current
 
 
 def nested_get(data: dict[str, Any], path: list[str]) -> Any:
@@ -387,6 +507,15 @@ class SocHandler(BaseHTTPRequestHandler):
                 response_json(self, {"events": search_events(query, size=min(size, 100))})
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
                 response_json(self, {"events": [], "error": str(exc)}, status=503)
+            return
+
+        if parsed.path in ("/api/relationships", "/graph/soc/assets"):
+            query = query_from_text(params.get("q", [""])[0])
+            size = int(params.get("size", ["250"])[0])
+            try:
+                response_json(self, relationship_payload(query, size=min(size, 1000)))
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+                response_json(self, {"nodes": [], "edges": [], "relationships": [], "error": str(exc)}, status=503)
             return
 
         if parsed.path == "/api/assets":

@@ -76,6 +76,7 @@ Progress:
 - Logstash now reads Suricata EVE-style JSON from the `sentinelmesh-suricata` volume.
 - Logstash now reads Zeek JSON from the `sentinelmesh-zeek` volume.
 - `sm-seed-nsm-events` seeds validation records into those volumes and can verify indexing in OpenSearch.
+- `sm-process-pcap` runs offline Suricata and Zeek processing for PCAP files and appends output to the same ingest volumes.
 
 Done when:
 
@@ -204,6 +205,8 @@ The next sprint should focus on P0 ingest and packet evidence:
 4. Configure Vector/Logstash to ingest those logs into OpenSearch.
 5. Add a PCAP replay validation test that asserts events reach OpenSearch.
 6. Add Prometheus metrics for ingest count, parser errors, queue depth, and event lag.
+
+Current progress closes part of this sprint by adding seeded event validation plus offline PCAP processing into the same Logstash/OpenSearch path. Remaining work is always-on interface capture and automated PCAP validation.
 
 This is the highest-leverage gap because SOC, asset context, risk scoring, dashboards, and relationship views all become more useful once real events flow through the system.
 

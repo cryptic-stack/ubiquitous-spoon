@@ -39,6 +39,7 @@ Health checks:
 - Container running
 - EVE file being written
 - Interface exists
+- Offline PCAP processing through `sm-process-pcap` produces EVE records
 
 ## Zeek
 
@@ -75,6 +76,7 @@ Health checks:
 
 - Container running
 - `conn.log` being written
+- Offline PCAP processing through `sm-process-pcap` produces JSON log records
 
 ## Arkime
 

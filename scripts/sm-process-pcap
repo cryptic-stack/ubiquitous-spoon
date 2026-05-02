@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Process a PCAP through Suricata and Zeek containers and feed the normal ingest path.
+# Inputs: PCAP path and Docker Compose project name.
+# Outputs: Suricata EVE JSON and Zeek JSON records in sensor log volumes.
+# Safe to re-run: yes, but repeated PCAP processing can create duplicate indexed events.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-process-pcap.log"
+
+COMPOSE_PROJECT="sentinelmesh"
+SURICATA_IMAGE="${SENTINELMESH_SURICATA_IMAGE:-jasonish/suricata:latest}"
+ZEEK_IMAGE="${SENTINELMESH_ZEEK_IMAGE:-zeek/zeek:latest}"
+RUN_SURICATA="true"
+RUN_ZEEK="true"
+PCAP_PATH=""
+
+usage() {
+  cat <<'EOF'
+Usage: sm-process-pcap --pcap PATH [--project NAME] [--suricata-image IMAGE] [--zeek-image IMAGE] [--no-suricata] [--no-zeek]
+
+Processes a PCAP offline through Suricata and Zeek containers. Outputs are
+appended to the SentinelMesh sensor log volumes read by Logstash:
+
+  - sentinelmesh-suricata:/eve.json
+  - sentinelmesh-zeek:/current/sentinelmesh-zeek.json
+
+Examples:
+  sm-process-pcap --pcap /data/range/example.pcap
+  sm-process-pcap --pcap ./attack.pcap --project sentinelmesh
+  sm-process-pcap --pcap ./attack.pcap --no-suricata
+
+Requires Docker and existing SentinelMesh Docker volumes. Start a profile such
+as standalone, sensor, cyber-range, or dev-lab before running this command.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pcap)
+      PCAP_PATH="${2:-}"
+      shift 2
+      ;;
+    --project)
+      COMPOSE_PROJECT="${2:-}"
+      shift 2
+      ;;
+    --suricata-image)
+      SURICATA_IMAGE="${2:-}"
+      shift 2
+      ;;
+    --zeek-image)
+      ZEEK_IMAGE="${2:-}"
+      shift 2
+      ;;
+    --no-suricata)
+      RUN_SURICATA="false"
+      shift
+      ;;
+    --no-zeek)
+      RUN_ZEEK="false"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$PCAP_PATH" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ ! -f "$PCAP_PATH" ]]; then
+  echo "PCAP not found: $PCAP_PATH"
+  exit 1
+fi
+
+if [[ "$(basename "$PCAP_PATH")" == *"'"* ]]; then
+  echo "PCAP filename cannot contain a single quote."
+  exit 1
+fi
+
+if [[ "$RUN_SURICATA" != "true" && "$RUN_ZEEK" != "true" ]]; then
+  echo "At least one engine must be enabled."
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required."
+  exit 1
+fi
+
+SURICATA_VOLUME="${COMPOSE_PROJECT}_sentinelmesh-suricata"
+ZEEK_VOLUME="${COMPOSE_PROJECT}_sentinelmesh-zeek"
+
+docker volume inspect "$SURICATA_VOLUME" >/dev/null
+docker volume inspect "$ZEEK_VOLUME" >/dev/null
+
+PCAP_ABS="$(cd "$(dirname "$PCAP_PATH")" && pwd)/$(basename "$PCAP_PATH")"
+PCAP_DIR="$(dirname "$PCAP_ABS")"
+PCAP_FILE="$(basename "$PCAP_ABS")"
+RUN_ID="pcap-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+
+echo "Processing PCAP: $PCAP_ABS"
+echo "Run ID: $RUN_ID"
+
+if [[ "$RUN_SURICATA" == "true" ]]; then
+  echo "Running Suricata image: $SURICATA_IMAGE"
+  docker run --rm \
+    --entrypoint sh \
+    -v "$PCAP_DIR:/pcap:ro" \
+    -v "$SURICATA_VOLUME:/suricata" \
+    "$SURICATA_IMAGE" \
+    -c 'set -e
+      mkdir -p /tmp/sentinelmesh-suricata /suricata
+      suricata -r "/pcap/'"$PCAP_FILE"'" -l /tmp/sentinelmesh-suricata -k none
+      if [ -s /tmp/sentinelmesh-suricata/eve.json ]; then
+        printf "\n" >> /suricata/eve.json
+        cat /tmp/sentinelmesh-suricata/eve.json >> /suricata/eve.json
+        printf "\n" >> /suricata/eve.json
+      else
+        echo "Suricata did not produce eve.json"
+        exit 1
+      fi'
+fi
+
+if [[ "$RUN_ZEEK" == "true" ]]; then
+  echo "Running Zeek image: $ZEEK_IMAGE"
+  docker run --rm \
+    --entrypoint sh \
+    -v "$PCAP_DIR:/pcap:ro" \
+    -v "$ZEEK_VOLUME:/zeek" \
+    "$ZEEK_IMAGE" \
+    -c 'set -e
+      mkdir -p /tmp/sentinelmesh-zeek /zeek/current
+      cd /tmp/sentinelmesh-zeek
+      zeek -r "/pcap/'"$PCAP_FILE"'" LogAscii::use_json=T
+      found=false
+      for log_file in *.log; do
+        [ -f "$log_file" ] || continue
+        found=true
+        printf "\n" >> /zeek/current/sentinelmesh-zeek.json
+        cat "$log_file" >> /zeek/current/sentinelmesh-zeek.json
+        printf "\n" >> /zeek/current/sentinelmesh-zeek.json
+      done
+      if [ "$found" != "true" ]; then
+        echo "Zeek did not produce JSON log files"
+        exit 1
+      fi'
+fi
+
+echo "PCAP processing complete. Logstash will ingest appended records from the sensor log volumes."

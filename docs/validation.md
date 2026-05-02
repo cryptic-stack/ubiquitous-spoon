@@ -60,6 +60,14 @@ sudo sm-seed-nsm-events --opensearch-url http://localhost:9200
 
 From the repository root on a Windows development host, the same script can be run through a Linux shell with Docker Desktop available. It writes one Suricata EVE-style event and one Zeek JSON event into the SentinelMesh Docker log volumes, then waits for those records to appear in `sentinelmesh-events-*`.
 
+To validate with a PCAP instead of synthetic JSON:
+
+```bash
+sudo sm-process-pcap --pcap /data/range/example.pcap
+```
+
+Then query OpenSearch for Suricata and Zeek records in `sentinelmesh-events-*`.
+
 ## CI Validation
 
 GitHub Actions runs:

@@ -54,3 +54,11 @@ sudo sm-seed-nsm-events --opensearch-url http://localhost:9200
 ```
 
 This writes validation records into the sensor log volumes and verifies that Logstash indexes them into `sentinelmesh-events-*`.
+
+To process an actual PCAP through the containerized engines and feed the same ingest path:
+
+```bash
+sudo sm-process-pcap --pcap /data/range/example.pcap
+```
+
+This runs Suricata and Zeek in offline mode, appends their JSON output to the sensor log volumes, and lets Logstash index the records.

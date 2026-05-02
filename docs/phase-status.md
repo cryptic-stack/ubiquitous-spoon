@@ -169,11 +169,12 @@ Done:
 
 - Arkime and Stenographer placeholder containers exist.
 - PCAP replay script exists.
+- Offline PCAP processing script exists for Suricata and Zeek.
 
 Remaining:
 
-- Make Suricata produce EVE logs.
-- Make Zeek produce logs.
+- Make always-on Suricata produce EVE logs from monitored interfaces.
+- Make always-on Zeek produce logs from monitored interfaces.
 - Replace Arkime placeholder with working capture/viewer configuration.
 - Replace Stenographer placeholder with working packet spool configuration.
 - Forward sensor logs to manager.
@@ -193,6 +194,7 @@ Done:
 - Prometheus and Grafana observability stack exists.
 - Relationship metrics and dashboard provisioning exist.
 - `sm-seed-nsm-events` can seed Suricata and Zeek-shaped validation events into the ingest path.
+- `sm-process-pcap` can process PCAPs through Suricata and Zeek into the Logstash ingest path.
 
 Remaining:
 

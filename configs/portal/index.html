@@ -355,14 +355,31 @@
         </section>
 
         <section id="hunt" class="view">
-          <div class="panel">
-            <h2>Hunt Results</h2>
-            <table>
-              <thead>
-                <tr><th>Time</th><th>Module</th><th>Type</th><th>Source</th><th>Destination</th><th>Detail</th></tr>
-              </thead>
-              <tbody id="huntBody"></tbody>
-            </table>
+          <div class="layout">
+            <div class="panel">
+              <h2>Hunt Results</h2>
+              <table>
+                <thead>
+                  <tr><th>Time</th><th>Module</th><th>Type</th><th>Source</th><th>Destination</th><th>Detail</th></tr>
+                </thead>
+                <tbody id="huntBody"></tbody>
+              </table>
+            </div>
+            <div class="panel">
+              <h2>Group Metrics</h2>
+              <div class="panel-body stack">
+                <select id="groupField" aria-label="Group field">
+                  <option value="source.ip">source.ip</option>
+                  <option value="destination.ip">destination.ip</option>
+                  <option value="destination.port">destination.port</option>
+                  <option value="event.module">event.module</option>
+                  <option value="event.dataset">event.dataset</option>
+                  <option value="event_type">event_type</option>
+                  <option value="protocol">protocol</option>
+                </select>
+                <div id="groupList"></div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -436,6 +453,10 @@
 
       function text(value) {
         return value === undefined || value === null || value === "" ? "-" : String(value);
+      }
+
+      function jsString(value) {
+        return JSON.stringify(text(value));
       }
 
       function setView(name) {
@@ -528,6 +549,17 @@
           : `<tr><td colspan="7" class="muted">No event-derived relationships found.</td></tr>`;
       }
 
+      function renderGroupBuckets(payload) {
+        const node = document.getElementById("groupList");
+        const buckets = payload.buckets || [];
+        node.innerHTML = buckets.length
+          ? buckets.map((bucket) => `
+              <button class="icon-button" onclick="pivotHunt(${jsString(bucket.pivot_query)})">
+                ${text(bucket.key)} (${text(bucket.count)})
+              </button>`).join("")
+          : `<span class="muted">No grouped values found.</span>`;
+      }
+
       async function loadOverview() {
         const response = await fetch("/api/overview");
         state.overview = await response.json();
@@ -551,6 +583,15 @@
         const response = await fetch(`/api/events?q=${encodeURIComponent(query)}&size=50`);
         const data = await response.json();
         renderEvents("huntBody", data.events || []);
+        await loadGroupBuckets();
+      }
+
+      async function loadGroupBuckets() {
+        const query = document.getElementById("huntQuery").value;
+        const field = document.getElementById("groupField").value;
+        const response = await fetch(`/api/groupby?q=${encodeURIComponent(query)}&field=${encodeURIComponent(field)}&size=12`);
+        const data = await response.json();
+        renderGroupBuckets(data);
       }
 
       async function loadRelationships() {
@@ -563,6 +604,7 @@
 
       document.querySelectorAll("nav button").forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
       document.getElementById("runHunt").addEventListener("click", () => setView("hunt"));
+      document.getElementById("groupField").addEventListener("change", () => loadGroupBuckets());
       document.getElementById("huntQuery").addEventListener("keydown", (event) => {
         if (event.key === "Enter") setView("hunt");
       });

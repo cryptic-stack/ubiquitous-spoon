@@ -75,6 +75,14 @@ The payload includes:
 
 The SOC Prometheus scrape also emits `sentinelmesh_soc_relationship_observed_count` so Grafana can show top observed communication pairs from the same OpenSearch-backed event stream used by Hunt.
 
+## Hunt Grouping
+
+The SOC portal exposes dashboard-style grouped Hunt pivots:
+
+- `GET /api/groupby?q=<hunt query>&field=source.ip&size=10`
+
+Allowed fields are constrained to common operator pivots: `source.ip`, `destination.ip`, `destination.port`, `event.module`, `event.dataset`, `event_type`, and `protocol`. Each bucket includes a `pivot_query` value that the SOC UI can immediately run as a filtered Hunt. Operator-facing aliases such as `destination.port` are translated to the current backend field names when the query runs.
+
 ## Design Boundary
 
 Prometheus is the time-series metrics store. It is not the authoritative relationship database.

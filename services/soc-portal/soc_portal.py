@@ -27,6 +27,19 @@ OPENSEARCH_URL = os.getenv("SENTINELMESH_OPENSEARCH_URL", "http://opensearch:920
 EVENT_INDEX = os.getenv("SENTINELMESH_EVENT_INDEX_PATTERN", "sentinelmesh-events-*")
 ASSET_SEED_PATH = Path(os.getenv("SENTINELMESH_ASSET_SEED_PATH", "/seeds/sample-assets.json"))
 REQUEST_TIMEOUT = float(os.getenv("SENTINELMESH_SOC_REQUEST_TIMEOUT", "3"))
+GROUPABLE_FIELDS = {
+    "event.module": "event.module",
+    "event.dataset": "event.dataset",
+    "event_type": "event_type.keyword",
+    "source.ip": "source.ip",
+    "destination.ip": "destination.ip",
+    "destination.port": "dest_port",
+    "protocol": "proto.keyword",
+}
+QUERY_FIELD_ALIASES = {
+    "destination.port": "dest_port",
+    "protocol": "proto",
+}
 
 
 def load_seed_assets(path: Path = ASSET_SEED_PATH) -> list[dict[str, Any]]:
@@ -79,9 +92,10 @@ def search_events(query: dict[str, Any], size: int = 25) -> list[dict[str, Any]]
     return [format_event(hit) for hit in hits]
 
 
-def terms_aggregation(field: str, size: int = 10) -> list[dict[str, Any]]:
+def terms_aggregation(field: str, size: int = 10, query: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     body = {
         "size": 0,
+        "query": query or {"match_all": {}},
         "aggs": {
             "values": {
                 "terms": {
@@ -179,6 +193,30 @@ def safe_relationships(query: dict[str, Any], size: int = 250) -> list[dict[str,
         return relationship_payload(query, size=size)["relationships"]
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
         return []
+
+
+def groupby_payload(query: dict[str, Any], field: str, size: int = 10) -> dict[str, Any]:
+    aggregation_field = GROUPABLE_FIELDS.get(field)
+    if aggregation_field is None:
+        return {
+            "field": field,
+            "buckets": [],
+            "error": f"Unsupported group field: {field}",
+            "allowed_fields": sorted(GROUPABLE_FIELDS),
+        }
+    buckets = terms_aggregation(aggregation_field, size=size, query=query)
+    return {
+        "field": field,
+        "aggregation_field": aggregation_field,
+        "buckets": [
+            {
+                "key": bucket["key"],
+                "count": bucket["count"],
+                "pivot_query": f"{field}:{bucket['key']}",
+            }
+            for bucket in buckets
+        ],
+    }
 
 
 def metric_line(name: str, labels: dict[str, Any], value: Any) -> str:
@@ -350,6 +388,7 @@ def query_from_text(text: str) -> dict[str, Any]:
         return {"match_all": {}}
     if ":" in text and " " not in text:
         field, value = text.split(":", 1)
+        field = QUERY_FIELD_ALIASES.get(field, field)
         return {"term": {field: value}}
     return {
         "query_string": {
@@ -516,6 +555,16 @@ class SocHandler(BaseHTTPRequestHandler):
                 response_json(self, relationship_payload(query, size=min(size, 1000)))
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
                 response_json(self, {"nodes": [], "edges": [], "relationships": [], "error": str(exc)}, status=503)
+            return
+
+        if parsed.path == "/api/groupby":
+            query = query_from_text(params.get("q", [""])[0])
+            field = params.get("field", ["source.ip"])[0]
+            size = int(params.get("size", ["10"])[0])
+            try:
+                response_json(self, groupby_payload(query, field, size=min(size, 50)))
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+                response_json(self, {"field": field, "buckets": [], "error": str(exc)}, status=503)
             return
 
         if parsed.path == "/api/assets":

@@ -18,6 +18,12 @@ class SocPortalTests(unittest.TestCase):
             {"term": {"source.ip": "10.10.10.25"}},
         )
 
+    def test_query_from_text_maps_operator_field_aliases(self):
+        self.assertEqual(
+            soc_portal.query_from_text("destination.port:443"),
+            {"term": {"dest_port": "443"}},
+        )
+
     def test_format_event_builds_operator_pivots(self):
         event = soc_portal.format_event(
             {
@@ -72,6 +78,28 @@ class SocPortalTests(unittest.TestCase):
     def test_metric_line_escapes_label_values(self):
         line = soc_portal.metric_line("sentinelmesh_test", {"field": 'a"b'}, 3)
         self.assertEqual(line, 'sentinelmesh_test{field="a\\"b"} 3')
+
+    def test_groupby_payload_maps_allowed_field_to_pivot_queries(self):
+        original_terms_aggregation = soc_portal.terms_aggregation
+
+        def fake_terms_aggregation(field, size=10, query=None):
+            self.assertEqual(field, "source.ip")
+            self.assertEqual(query, {"match_all": {}})
+            return [{"key": "10.10.10.25", "count": 4}]
+
+        try:
+            soc_portal.terms_aggregation = fake_terms_aggregation
+            payload = soc_portal.groupby_payload({"match_all": {}}, "source.ip", size=10)
+        finally:
+            soc_portal.terms_aggregation = original_terms_aggregation
+
+        self.assertEqual(payload["aggregation_field"], "source.ip")
+        self.assertEqual(payload["buckets"][0]["pivot_query"], "source.ip:10.10.10.25")
+
+    def test_groupby_payload_rejects_unknown_field(self):
+        payload = soc_portal.groupby_payload({"match_all": {}}, "message", size=10)
+        self.assertEqual(payload["buckets"], [])
+        self.assertIn("Unsupported group field", payload["error"])
 
     def test_relationship_payload_enriches_event_pairs_with_asset_context(self):
         original_search_events = soc_portal.search_events

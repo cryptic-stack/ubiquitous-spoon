@@ -340,7 +340,7 @@ Inputs:
 Outputs:
 
 - SOC web UI
-- Same-origin `/api/overview`, `/api/events`, `/api/assets`, `/api/relationships`, `/graph/soc/assets`, and `/api/health` JSON
+- Same-origin `/api/overview`, `/api/events`, `/api/groupby`, `/api/assets`, `/api/relationships`, `/graph/soc/assets`, and `/api/health` JSON
 - Prometheus metrics at `/metrics` for dashboard rollups
 
 Data path:
@@ -358,6 +358,7 @@ Health checks:
 - HTTP endpoint returns OK
 - `/api/health` returns OK
 - `/api/overview` can summarize event and asset context
+- `/api/groupby` can summarize Hunt results by approved fields for dashboard-style pivots
 - `/api/relationships` can summarize source-to-destination communication from indexed events
 - Prometheus can scrape `/metrics`
 

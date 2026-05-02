@@ -64,3 +64,4 @@
 - Added event-derived SOC relationship APIs, UI, and Prometheus metrics for hunt-aligned graph context.
 - Added grouped Hunt pivots through `/api/groupby` and the SOC Hunt view.
 - Embedded Grafana SOC Overview and Asset Relationships dashboards in the SOC portal.
+- Added a next-step build plan for sensor ingest, PCAP evidence, asset context, workflow state, and detection lifecycle work.

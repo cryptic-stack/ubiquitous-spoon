@@ -99,6 +99,7 @@ Documentation is part of the build. Every meaningful change should update at lea
 - `docs/iso-testing.md`
 - `docs/observability.md`
 - `docs/security-onion-gap-analysis.md`
+- `docs/next-steps.md`
 
 Codex-specific implementation guidance lives in:
 

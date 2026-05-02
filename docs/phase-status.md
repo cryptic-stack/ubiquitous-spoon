@@ -31,12 +31,14 @@ Done:
 - Validation documentation exists.
 - GitHub Actions validation workflow exists.
 - Security Onion gap analysis and closure plan exists.
+- Next-step build plan exists.
 
 Remaining:
 
 - Commit and push initial scaffold.
 - Keep docs current as implementation continues.
 - Convert the highest-priority Security Onion gaps into implementation issues.
+- Use `docs/next-steps.md` to drive the next implementation sprint.
 
 ## Phase 2 - Compose Profile Stack
 

@@ -74,6 +74,8 @@ services:
           - logstash
     volumes:
       - ../configs/logstash:/usr/share/logstash/pipeline:ro
+      - sentinelmesh-suricata:/logs/suricata:ro
+      - sentinelmesh-zeek:/logs/zeek:ro
 
   opensearch:
     image: opensearchproject/opensearch:2

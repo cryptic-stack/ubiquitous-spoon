@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Seed Suricata and Zeek-shaped events into sensor log volumes for ingest validation.
+# Inputs: Docker Compose project name and optional OpenSearch URL.
+# Outputs: Sample events in sensor log volumes and optional OpenSearch count verification.
+# Safe to re-run: yes, creates a unique seed ID on each run.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-seed-nsm-events.log"
+
+COMPOSE_PROJECT="sentinelmesh"
+OPENSEARCH_URL="${SENTINELMESH_OPENSEARCH_URL:-http://localhost:9200}"
+VERIFY="true"
+WAIT_SECONDS="60"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-seed-nsm-events [--project NAME] [--opensearch-url URL] [--wait SECONDS] [--no-verify]
+
+Seeds one Suricata EVE-style alert event and one Zeek JSON connection event into
+the SentinelMesh Docker volumes that Logstash reads.
+
+Examples:
+  sm-seed-nsm-events
+  sm-seed-nsm-events --project sentinelmesh --opensearch-url http://localhost:9200
+  sm-seed-nsm-events --no-verify
+
+Requires Docker. Verification also requires curl and a running OpenSearch service.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --project)
+      COMPOSE_PROJECT="${2:-}"
+      shift 2
+      ;;
+    --opensearch-url)
+      OPENSEARCH_URL="${2:-}"
+      shift 2
+      ;;
+    --wait)
+      WAIT_SECONDS="${2:-}"
+      shift 2
+      ;;
+    --no-verify)
+      VERIFY="false"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$COMPOSE_PROJECT" ]]; then
+  echo "Compose project name cannot be empty."
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required."
+  exit 1
+fi
+
+if [[ "$VERIFY" == "true" ]] && ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required for verification. Re-run with --no-verify to only seed events."
+  exit 1
+fi
+
+SURICATA_VOLUME="${COMPOSE_PROJECT}_sentinelmesh-suricata"
+ZEEK_VOLUME="${COMPOSE_PROJECT}_sentinelmesh-zeek"
+
+docker volume inspect "$SURICATA_VOLUME" >/dev/null
+docker volume inspect "$ZEEK_VOLUME" >/dev/null
+
+SEED_ID="seed-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+EVENT_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+cat > "$TMP_DIR/eve.json" <<EOF
+{"timestamp":"$EVENT_TIME","event_type":"alert","src_ip":"10.10.10.25","src_port":51514,"dest_ip":"203.0.113.25","dest_port":443,"proto":"TCP","alert":{"signature_id":9000001,"signature":"SentinelMesh seeded Suricata validation event","category":"Attempted Information Leak","severity":2},"sentinelmesh":{"seed_id":"$SEED_ID","seed_type":"suricata-eve"}}
+EOF
+
+cat > "$TMP_DIR/zeek.json" <<EOF
+{"ts":"$EVENT_TIME","uid":"SMSEED1","id.orig_h":"10.10.10.25","id.orig_p":51514,"id.resp_h":"203.0.113.25","id.resp_p":443,"proto":"tcp","service":"ssl","duration":1.25,"orig_bytes":512,"resp_bytes":4096,"conn_state":"SF","sentinelmesh":{"seed_id":"$SEED_ID","seed_type":"zeek-conn"}}
+EOF
+
+echo "Seeding NSM events with seed ID: $SEED_ID"
+docker run --rm \
+  -v "$SURICATA_VOLUME:/suricata" \
+  -v "$ZEEK_VOLUME:/zeek" \
+  -v "$TMP_DIR:/seed:ro" \
+  alpine:3.20 \
+  sh -c 'mkdir -p /suricata /zeek/current && printf "\n" >> /suricata/eve.json && cat /seed/eve.json >> /suricata/eve.json && printf "\n" >> /zeek/current/sentinelmesh-zeek.json && cat /seed/zeek.json >> /zeek/current/sentinelmesh-zeek.json'
+
+echo "Seed events written to $SURICATA_VOLUME and $ZEEK_VOLUME."
+
+if [[ "$VERIFY" != "true" ]]; then
+  exit 0
+fi
+
+echo "Waiting up to $WAIT_SECONDS seconds for OpenSearch ingest at $OPENSEARCH_URL"
+for attempt in $(seq 1 "$WAIT_SECONDS"); do
+  response="$(curl -fsS "$OPENSEARCH_URL/sentinelmesh-events-*/_count?q=sentinelmesh.seed_id:$SEED_ID" 2>/dev/null || true)"
+
+  if echo "$response" | grep -Eq '"count"[[:space:]]*:[[:space:]]*[1-9]'; then
+    echo "Seed ingest verified in OpenSearch: $response"
+    exit 0
+  fi
+
+  sleep 1
+done
+
+echo "Seed events were written, but OpenSearch did not show them before timeout."
+echo "Check sm-logstash logs and OpenSearch readiness."
+exit 1

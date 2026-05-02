@@ -27,7 +27,8 @@ Outputs:
 
 Data path:
 
-- `/data/sentinelmesh/suricata`
+- Docker volume `sentinelmesh-suricata`
+- Future host path `/data/sentinelmesh/suricata`
 
 Logs:
 
@@ -63,7 +64,8 @@ Outputs:
 
 Data path:
 
-- `/data/sentinelmesh/zeek`
+- Docker volume `sentinelmesh-zeek`
+- Future host path `/data/sentinelmesh/zeek`
 
 Logs:
 
@@ -174,8 +176,8 @@ Inputs:
 
 Outputs:
 
-- OpenSearch indexes
-- Manager forwarding endpoint
+- Future OpenSearch indexes
+- Future manager forwarding endpoint
 
 Data path:
 
@@ -193,7 +195,7 @@ Health checks:
 
 Design note:
 
-Vector is currently a lightweight MVP collector. It may be replaced or supplemented by Elastic Agent-compatible collection to more closely mirror Security Onion.
+Vector is currently a lightweight MVP collector placeholder. The first working ingest path uses Logstash file inputs against the sensor log volumes so that seeded and replay-derived NSM events can reach OpenSearch quickly. Vector may be replaced or supplemented by Elastic Agent-compatible collection to more closely mirror Security Onion.
 
 ## Redis
 
@@ -246,6 +248,8 @@ Ingest, parse, and forward events.
 Inputs:
 
 - Redis queue
+- Suricata EVE JSON from `sentinelmesh-suricata`
+- Zeek JSON logs from `sentinelmesh-zeek`
 - Future Beats/Elastic Agent compatible endpoints
 
 Outputs:
@@ -266,6 +270,14 @@ Health checks:
 - Container running
 - Pipeline config loads
 - Output endpoint reachable when configured
+- Seeded Suricata and Zeek events can be found in `sentinelmesh-events-*`
+
+Current state:
+
+- Reads `/logs/suricata/eve.json`.
+- Reads `/logs/zeek/current/*.json`.
+- Reads Redis list `sentinelmesh-events`.
+- Writes `sentinelmesh-events-YYYY.MM.dd` indexes in OpenSearch.
 
 ## OpenSearch
 

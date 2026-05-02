@@ -103,3 +103,4 @@ Evaluate:
 - Whether to preload all required images into the ISO or provide airgap bundles.
 - Whether OpenSearch remains the default datastore or Elasticsearch compatibility becomes a supported option.
 
+Detailed parity gaps and closure phases are tracked in `docs/security-onion-gap-analysis.md`.

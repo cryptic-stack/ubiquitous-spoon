@@ -55,3 +55,6 @@
 - Replaced SOC placeholder page with a static operator dashboard scaffold.
 - Added Prometheus, Grafana, and connection metrics service for relationship visualization.
 - Added Grafana provisioning and default SentinelMesh relationship dashboard.
+- Added Security Onion gap analysis and phased closure plan.
+- Added MVP Logstash ingest from Suricata and Zeek log volumes into OpenSearch.
+- Added `sm-seed-nsm-events` to seed and verify Suricata/Zeek-shaped ingest records.

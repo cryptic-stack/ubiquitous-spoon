@@ -30,11 +30,13 @@ Done:
 - Design decisions are recorded.
 - Validation documentation exists.
 - GitHub Actions validation workflow exists.
+- Security Onion gap analysis and closure plan exists.
 
 Remaining:
 
 - Commit and push initial scaffold.
 - Keep docs current as implementation continues.
+- Convert the highest-priority Security Onion gaps into implementation issues.
 
 ## Phase 2 - Compose Profile Stack
 
@@ -50,12 +52,14 @@ Done:
 - Arkime and Stenographer placeholder containers exist.
 - SOC portal static scaffold exists.
 - Prometheus, Grafana, and connection metrics services exist.
+- Logstash has an MVP file ingest path from Suricata and Zeek log volumes into OpenSearch.
 
 Remaining:
 
 - Replace static SOC portal scaffold with real application/API.
 - Replace Arkime and Stenographer placeholders with final images/configuration.
 - Decide final collector model: Vector, Elastic Agent, or hybrid.
+- Add live traffic and PCAP replay validation for the Logstash ingest path.
 - Add service healthchecks to Compose.
 
 ## Phase 3 - Ubuntu Server Autoinstall
@@ -147,11 +151,12 @@ Done:
 - OpenSearch index templates exist for assets and enriched events.
 - Tests validate risk scoring and schema parsing.
 - Vulnerability import schema and staging command exist.
+- Event indexes can receive MVP Suricata and Zeek-shaped records through Logstash.
 
 Remaining:
 
 - Write assets to OpenSearch.
-- Consume Zeek and Suricata events.
+- Consume live Zeek and Suricata events.
 - Merge staged vulnerability scanner output into asset context records.
 - Enrich events before indexing or at query time.
 - Add UI/API surface for asset context.
@@ -187,10 +192,11 @@ Done:
 - Sensor-side enrollment config script exists.
 - Prometheus and Grafana observability stack exists.
 - Relationship metrics and dashboard provisioning exist.
+- `sm-seed-nsm-events` can seed Suricata and Zeek-shaped validation events into the ingest path.
 
 Remaining:
 
-- Build real ingest pipelines.
+- Extend real ingest pipelines from seeded validation to live sensor output.
 - Add dashboard saved objects.
 - Validate enrollment tokens through the manager service.
 - Add rule management placeholder.

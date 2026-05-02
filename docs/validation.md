@@ -19,6 +19,7 @@ This performs:
 - Docker-backed JSON parsing for schemas, OpenSearch templates, and examples
 - Docker-backed YAML parsing for Prometheus and Grafana provisioning
 - Docker-backed autoinstall YAML validation
+- Optional live ingest proof with `sm-seed-nsm-events` against a running Compose stack
 
 Use this when Ubuntu WSL is not ready yet but Docker Desktop is working.
 
@@ -48,6 +49,16 @@ This performs:
 ./tests/test-ansible.sh
 ./tests/test-compose.sh
 ```
+
+## Live Ingest Check
+
+With a profile containing `logstash` and `opensearch` running, seed validation events:
+
+```bash
+sudo sm-seed-nsm-events --opensearch-url http://localhost:9200
+```
+
+From the repository root on a Windows development host, the same script can be run through a Linux shell with Docker Desktop available. It writes one Suricata EVE-style event and one Zeek JSON event into the SentinelMesh Docker log volumes, then waits for those records to appear in `sentinelmesh-events-*`.
 
 ## CI Validation
 

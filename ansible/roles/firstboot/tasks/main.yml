@@ -1,0 +1,28 @@
+---
+# SentinelMesh NSM
+# Purpose: Install and enable the firstboot setup reminder service.
+
+- name: Install firstboot systemd unit
+  ansible.builtin.copy:
+    src: sentinelmesh-firstboot.service
+    dest: /etc/systemd/system/sentinelmesh-firstboot.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install login reminder
+  ansible.builtin.copy:
+    src: sentinelmesh-firstboot-profile.sh
+    dest: /etc/profile.d/sentinelmesh-firstboot.sh
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable firstboot service
+  ansible.builtin.service:
+    name: sentinelmesh-firstboot.service
+    enabled: true

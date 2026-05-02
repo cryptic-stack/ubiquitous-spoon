@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Configure SentinelMesh data directory intent.
+# Inputs: Data, PCAP, and OpenSearch paths.
+# Outputs: Directories and /etc/sentinelmesh/storage.yml.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-configure-storage.log"
+OUTPUT_FILE="/etc/sentinelmesh/storage.yml"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-configure-storage [--data-path PATH] [--pcap-path PATH] [--opensearch-path PATH] [--retention-days DAYS]
+
+Creates storage directories and records storage intent.
+EOF
+}
+
+DATA_PATH="/data/sentinelmesh"
+PCAP_PATH="/data/pcap"
+OPENSEARCH_PATH="/data/opensearch"
+RETENTION_DAYS="30"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --data-path)
+      DATA_PATH="${2:-}"
+      shift 2
+      ;;
+    --pcap-path)
+      PCAP_PATH="${2:-}"
+      shift 2
+      ;;
+    --opensearch-path)
+      OPENSEARCH_PATH="${2:-}"
+      shift 2
+      ;;
+    --retention-days)
+      RETENTION_DAYS="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR" /etc/sentinelmesh "$DATA_PATH" "$PCAP_PATH" "$OPENSEARCH_PATH"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+cat > "$OUTPUT_FILE" <<EOF
+data_path: $DATA_PATH
+pcap_path: $PCAP_PATH
+opensearch_path: $OPENSEARCH_PATH
+retention_days: $RETENTION_DAYS
+EOF
+
+echo "Storage directories are present."
+echo "Storage intent written to $OUTPUT_FILE"

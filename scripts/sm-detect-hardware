@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Display detected CPU, memory, disk, and network interfaces.
+# Inputs: Host hardware.
+# Outputs: Human-readable hardware summary.
+# Safe to re-run: yes.
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  echo "Usage: sm-detect-hardware"
+  exit 0
+fi
+
+echo "CPU:"
+lscpu | sed -n '1,8p'
+echo
+echo "Memory:"
+free -h
+echo
+echo "Block devices:"
+lsblk
+echo
+echo "Network interfaces:"
+ip -brief link
+

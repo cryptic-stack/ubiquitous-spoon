@@ -1,0 +1,14 @@
+[Unit]
+Description=SentinelMesh first boot setup reminder
+After=network-online.target docker.service
+Wants=network-online.target
+ConditionPathExists=!/etc/sentinelmesh/profile
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sentinelmesh/bin/sm-firstboot-reminder
+RemainAfterExit=false
+
+[Install]
+WantedBy=multi-user.target
+

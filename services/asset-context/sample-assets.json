@@ -1,0 +1,39 @@
+[
+  {
+    "ip_addresses": ["192.168.56.10"],
+    "mac_addresses": ["00:11:22:33:44:55"],
+    "hostnames": ["range-dc-01"],
+    "fqdn": "range-dc-01.lab.local",
+    "os_guess": "Windows Server",
+    "services": [
+      {
+        "name": "smb",
+        "port": 445,
+        "protocol": "tcp"
+      },
+      {
+        "name": "rdp",
+        "port": 3389,
+        "protocol": "tcp"
+      }
+    ],
+    "open_ports": [445, 3389],
+    "protocols": ["smb", "rdp", "dns"],
+    "users_observed": ["LAB\\Administrator"],
+    "criticality": "critical",
+    "tags": ["domain-controller", "cyber-range"],
+    "vulnerabilities": [
+      {
+        "id": "CVE-EXAMPLE-0001",
+        "scanner": "seed",
+        "severity": "critical",
+        "cvss": 9.8,
+        "status": "open"
+      }
+    ],
+    "exposure": {
+      "internet_facing": false,
+      "internal_only": true
+    }
+  }
+]

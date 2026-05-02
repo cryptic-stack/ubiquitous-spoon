@@ -1,0 +1,45 @@
+{
+  "id": "vpn-ransomware",
+  "name": "VPN Compromise To Ransomware",
+  "description": "Synthetic range scenario representing VPN compromise, lateral movement, and ransomware staging.",
+  "difficulty": "intermediate",
+  "objectives": [
+    "Identify suspicious VPN access",
+    "Trace lateral movement",
+    "Prioritize high-risk assets",
+    "Create an incident timeline"
+  ],
+  "timeline": [
+    {
+      "offset_seconds": 0,
+      "type": "marker",
+      "message": "Scenario started"
+    },
+    {
+      "offset_seconds": 300,
+      "type": "synthetic_event",
+      "message": "Suspicious VPN login from unusual ASN"
+    },
+    {
+      "offset_seconds": 900,
+      "type": "synthetic_event",
+      "message": "SMB lateral movement observed"
+    },
+    {
+      "offset_seconds": 1800,
+      "type": "synthetic_event",
+      "message": "Ransomware staging behavior observed"
+    }
+  ],
+  "asset_context": [
+    {
+      "hostname": "range-dc-01",
+      "criticality": "critical",
+      "expected_risk": "critical"
+    }
+  ],
+  "scoring": {
+    "ctfd_enabled": false,
+    "max_points": 100
+  }
+}

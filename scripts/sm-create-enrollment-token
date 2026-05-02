@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Create a sensor enrollment token on manager-capable nodes.
+# Inputs: Optional sensor name and token TTL.
+# Outputs: JSONL token record under /etc/sentinelmesh/enrollment/tokens.jsonl.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-create-enrollment-token.log"
+ENROLLMENT_DIR="/etc/sentinelmesh/enrollment"
+TOKEN_FILE="$ENROLLMENT_DIR/tokens.jsonl"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-create-enrollment-token [--sensor-name NAME] [--ttl-hours HOURS]
+
+Creates a one-time sensor enrollment token record.
+EOF
+}
+
+SENSOR_NAME="sensor"
+TTL_HOURS="24"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --sensor-name)
+      SENSOR_NAME="${2:-}"
+      shift 2
+      ;;
+    --ttl-hours)
+      TTL_HOURS="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR" "$ENROLLMENT_DIR"
+chmod 700 "$ENROLLMENT_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+TOKEN="$(openssl rand -base64 32 | tr -d '\n')"
+CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+EXPIRES_AT="$(date -u -d "+${TTL_HOURS} hours" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+cat >> "$TOKEN_FILE" <<EOF
+{"sensor_name":"$SENSOR_NAME","token":"$TOKEN","created_at":"$CREATED_AT","expires_at":"$EXPIRES_AT","used":false}
+EOF
+
+chmod 600 "$TOKEN_FILE"
+
+echo "Enrollment token created for sensor: $SENSOR_NAME"
+echo "Token: $TOKEN"
+echo "Expires: $EXPIRES_AT"

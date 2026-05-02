@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Run local health checks.
+# Inputs: Current host and selected profile.
+# Outputs: Health check summary.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-doctor.log"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-doctor
+
+Runs SentinelMesh health checks.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+failures=0
+
+check() {
+  local name="$1"
+  shift
+  if "$@"; then
+    echo "[OK] $name"
+  else
+    echo "[FAIL] $name"
+    failures=$((failures + 1))
+  fi
+}
+
+check "docker command exists" command -v docker
+check "docker daemon reachable" docker info
+check "docker compose plugin works" docker compose version
+check "/etc/sentinelmesh exists" test -d /etc/sentinelmesh
+check "/var/log/sentinelmesh exists" test -d /var/log/sentinelmesh
+check "SentinelMesh OpenSearch templates exist" test -d /opt/sentinelmesh/configs/opensearch/index-templates
+
+docker_is_ready=false
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  docker_is_ready=true
+fi
+
+container_running() {
+  local container_name="$1"
+  docker inspect -f '{{.State.Running}}' "$container_name" 2>/dev/null | grep -qx true
+}
+
+profile_containers() {
+  local profile="$1"
+  case "$profile" in
+    standalone)
+      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      ;;
+    manager)
+      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      ;;
+    manager-search)
+      echo "sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment"
+      ;;
+    search)
+      echo "sm-logstash sm-opensearch"
+      ;;
+    sensor)
+      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector"
+      ;;
+    receiver)
+      echo "sm-redis sm-logstash"
+      ;;
+    cyber-range)
+      echo "sm-suricata sm-zeek sm-arkime sm-stenographer sm-vector sm-opensearch sm-dashboards sm-soc sm-asset-context sm-range-engine"
+      ;;
+    dev-lab)
+      echo "sm-vector sm-redis sm-logstash sm-opensearch sm-dashboards sm-soc sm-asset-context sm-sensor-enrollment sm-range-engine"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+if [[ -f /etc/sentinelmesh/profile ]]; then
+  profile="$(cat /etc/sentinelmesh/profile)"
+  echo "Profile: $profile"
+
+  if [[ "$docker_is_ready" == true ]]; then
+    for container in $(profile_containers "$profile"); do
+      check "container running: $container" container_running "$container"
+    done
+  else
+    echo "[WARN] Docker is not ready; skipping container checks"
+  fi
+else
+  echo "[WARN] /etc/sentinelmesh/profile is missing"
+fi
+
+if [[ "$failures" -gt 0 ]]; then
+  echo "Health checks completed with $failures failure(s)."
+  exit 1
+fi
+
+echo "Health checks passed."

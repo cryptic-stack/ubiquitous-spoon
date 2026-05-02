@@ -1,0 +1,55 @@
+# Changelog
+
+## Unreleased
+
+- Initialized SentinelMesh NSM project scaffold.
+- Connected local workspace to `https://github.com/cryptic-stack/ubiquitous-spoon.git`.
+- Added Windows build environment documentation.
+- Added universal ISO architecture documentation.
+- Added initial Docker Compose profile stack.
+- Added placeholder Ubuntu autoinstall and Packer files.
+- Added Windows and WSL helper scripts.
+- Validated Docker Compose rendering for all five initial profiles.
+- Recorded missing local workstation prerequisites found during first validation.
+- Added first-pass Ansible host preparation roles.
+- Added systemd firstboot reminder service.
+- Added `sm-firstboot-reminder`.
+- Added host preparation documentation.
+- Added Codex build instructions.
+- Added GitHub Actions validation workflow.
+- Added repository text and line-ending rules.
+- Validated Bash script syntax and autoinstall YAML through Docker-based Linux runners.
+- Narrowed appliance command installation to `sm-*` scripts only.
+- Added Ansible config, local inventory, and syntax test.
+- Added login-based firstboot reminder through `/etc/profile.d`.
+- Added Docker-backed Windows Linux validation helper.
+- Validated Ansible syntax through a Docker-based runner.
+- Added unified validation scripts and validation documentation.
+- Improved Compose validation behavior for Windows and Docker-missing environments.
+- Documented Security Onion alignment.
+- Added `manager-search`, `search`, and `receiver` profiles.
+- Added `redis` and `logstash` services to mirror the Security Onion pipeline shape.
+- Added `smbridge` Docker network and predictable `sm-*` container names.
+- Adjusted Logstash profile behavior so dedicated search nodes are not forced to run local Redis.
+- Added `asset-context` service placeholder.
+- Added asset context schema, enrichment design, and risk scoring documentation.
+- Added Python and JSON schema validation checks.
+- Added OpenSearch and Dashboards to cyber-range profile for local context storage.
+- Implemented MVP asset normalization and explainable risk scoring.
+- Added sample seed assets and OpenSearch index templates for assets and enriched events.
+- Expanded `sm-doctor` profile-aware container checks.
+- Added `sm-install-index-templates` and wired it into `sm-setup` for profiles with OpenSearch.
+- Added phase status tracking.
+- Added Arkime and Stenographer placeholder services to sensor-capable profiles.
+- Added `sm-replay-pcap` and installed `tcpreplay` in the base role.
+- Fixed appliance packaging to copy `services/` and `schemas/`.
+- Replaced range-engine placeholder with a Python scenario discovery service.
+- Added range scenario schema, sample `vpn-ransomware` scenario, and `sm-range-inject`.
+- Added sensor enrollment service placeholder plus manager and sensor enrollment scripts.
+- Implemented MVP backup, restore, and rule-update manifest workflows.
+- Expanded ISO build script from scaffold to first remaster workflow.
+- Added SentinelMesh payload copy and Ansible host-prep execution to autoinstall.
+- Added QEMU ISO smoke-test script and Packer validation test.
+- Implemented safe network and storage intent writers.
+- Added vulnerability import schema, sample import, and staging command.
+- Replaced SOC placeholder page with a static operator dashboard scaffold.

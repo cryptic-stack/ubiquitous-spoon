@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Replay a PCAP onto a selected interface for testing and cyber-range scenarios.
+# Inputs: PCAP path and network interface.
+# Outputs: Replayed packets and log entry.
+# Safe to re-run: yes, but replaying traffic can trigger detections repeatedly.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-replay-pcap.log"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-replay-pcap --pcap PATH --interface IFACE [--speed multiplier]
+
+Examples:
+  sm-replay-pcap --pcap /data/range/example.pcap --interface eth1
+  sm-replay-pcap --pcap attack.pcap --interface eth1 --speed 2.0
+
+Requires tcpreplay.
+EOF
+}
+
+PCAP_PATH=""
+INTERFACE=""
+SPEED="1.0"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pcap)
+      PCAP_PATH="${2:-}"
+      shift 2
+      ;;
+    --interface)
+      INTERFACE="${2:-}"
+      shift 2
+      ;;
+    --speed)
+      SPEED="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$PCAP_PATH" || -z "$INTERFACE" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ ! -f "$PCAP_PATH" ]]; then
+  echo "PCAP not found: $PCAP_PATH"
+  exit 1
+fi
+
+if ! command -v tcpreplay >/dev/null 2>&1; then
+  echo "tcpreplay is required."
+  exit 1
+fi
+
+if ! ip link show "$INTERFACE" >/dev/null 2>&1; then
+  echo "Interface not found: $INTERFACE"
+  exit 1
+fi
+
+echo "Replaying $PCAP_PATH on $INTERFACE at multiplier $SPEED"
+tcpreplay --intf1="$INTERFACE" --multiplier="$SPEED" "$PCAP_PATH"
+echo "Replay complete."

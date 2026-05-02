@@ -1,0 +1,35 @@
+{
+  "index_patterns": ["sentinelmesh-assets*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "asset_id": { "type": "keyword" },
+        "ip_addresses": { "type": "ip" },
+        "mac_addresses": { "type": "keyword" },
+        "hostnames": { "type": "keyword" },
+        "fqdn": { "type": "keyword" },
+        "first_seen": { "type": "date" },
+        "last_seen": { "type": "date" },
+        "os_guess": { "type": "keyword" },
+        "open_ports": { "type": "integer" },
+        "protocols": { "type": "keyword" },
+        "users_observed": { "type": "keyword" },
+        "risk_score": { "type": "float" },
+        "criticality": { "type": "keyword" },
+        "tags": { "type": "keyword" },
+        "vulnerabilities.id": { "type": "keyword" },
+        "vulnerabilities.severity": { "type": "keyword" },
+        "vulnerabilities.cvss": { "type": "float" },
+        "vulnerabilities.status": { "type": "keyword" },
+        "exposure.internet_facing": { "type": "boolean" },
+        "exposure.internal_only": { "type": "boolean" },
+        "risk_breakdown.factor": { "type": "keyword" }
+      }
+    }
+  }
+}

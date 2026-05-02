@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Update or stage detection rule metadata.
+# Inputs: Local rule directories.
+# Outputs: Rule update manifest.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-update-rules.log"
+RULE_DIR="${SENTINELMESH_RULE_DIR:-/opt/sentinelmesh/rules}"
+MANIFEST_DIR="${SENTINELMESH_RULE_MANIFEST_DIR:-/data/sentinelmesh/rules}"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-update-rules [--rule-dir PATH]
+
+MVP behavior:
+  Creates a local rule update manifest. Future versions will fetch, verify,
+  test, and deploy Suricata, Sigma, YARA, and Zeek rules.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --rule-dir)
+      RULE_DIR="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR" "$MANIFEST_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ ! -d "$RULE_DIR" ]]; then
+  echo "Rule directory not found: $RULE_DIR"
+  exit 1
+fi
+
+MANIFEST="$MANIFEST_DIR/rule-update-$(date -u +%Y%m%dT%H%M%SZ).json"
+
+cat > "$MANIFEST" <<EOF
+{
+  "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "rule_dir": "$RULE_DIR",
+  "suricata_files": $(find "$RULE_DIR/suricata" -type f 2>/dev/null | wc -l),
+  "sigma_files": $(find "$RULE_DIR/sigma" -type f 2>/dev/null | wc -l),
+  "yara_files": $(find "$RULE_DIR/yara" -type f 2>/dev/null | wc -l),
+  "zeek_files": $(find "$RULE_DIR/zeek" -type f 2>/dev/null | wc -l),
+  "status": "manifest-created"
+}
+EOF
+
+echo "Rule update manifest created: $MANIFEST"

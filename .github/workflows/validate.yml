@@ -1,0 +1,51 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible python3-yaml shellcheck
+
+      - name: Check Bash syntax
+        run: ./tests/test-scripts.sh
+
+      - name: Check Python syntax
+        run: ./tests/test-python.sh
+
+      - name: Validate JSON schemas
+        run: ./tests/test-schemas.sh
+
+      - name: Validate autoinstall YAML
+        run: ./tests/test-autoinstall.sh
+
+      - name: Validate Ansible syntax
+        run: ./tests/test-ansible.sh
+
+      - name: Validate Docker Compose profiles
+        run: ./scripts/wsl/test-compose.sh
+
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          Get-ChildItem ./scripts/windows/*.ps1 | ForEach-Object {
+            $errors = $null
+            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -LiteralPath $_.FullName -Raw), [ref]$errors)
+            if ($errors) {
+              Write-Error "Parse failed for $($_.Name)"
+              exit 1
+            }
+            Write-Host "Parsed $($_.Name)"
+          }

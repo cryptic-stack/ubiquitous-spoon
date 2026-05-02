@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Restore a SentinelMesh configuration backup archive.
+# Inputs: Backup archive produced by sm-backup.
+# Outputs: Restored configuration files.
+# Safe to re-run: no, requires explicit --yes confirmation.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-restore.log"
+ARCHIVE=""
+CONFIRM="false"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-restore --archive PATH --yes
+
+Restores SentinelMesh configuration files from a backup archive.
+
+This can overwrite existing configuration. Packet captures, OpenSearch data,
+and Docker volumes are not restored by this MVP workflow.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --archive)
+      ARCHIVE="${2:-}"
+      shift 2
+      ;;
+    --yes)
+      CONFIRM="true"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$ARCHIVE" || "$CONFIRM" != "true" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ ! -f "$ARCHIVE" ]]; then
+  echo "Archive not found: $ARCHIVE"
+  exit 1
+fi
+
+echo "Inspecting archive: $ARCHIVE"
+tar -tzf "$ARCHIVE" >/dev/null
+
+echo "Restoring SentinelMesh configuration files."
+tar -xzf "$ARCHIVE" -C /
+
+echo "Restore complete. Run: sudo sm-doctor"

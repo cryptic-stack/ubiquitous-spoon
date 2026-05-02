@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinelmesh.local/schemas/range-scenario.schema.json",
+  "title": "SentinelMesh Range Scenario",
+  "type": "object",
+  "required": ["id", "name", "description", "timeline"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "difficulty": { "type": "string" },
+    "objectives": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offset_seconds", "type", "message"],
+        "properties": {
+          "offset_seconds": { "type": "integer", "minimum": 0 },
+          "type": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "asset_context": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "scoring": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "index_patterns": ["sentinelmesh-events-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "event.module": { "type": "keyword" },
+        "event.dataset": { "type": "keyword" },
+        "source.ip": { "type": "ip" },
+        "destination.ip": { "type": "ip" },
+        "asset.asset_id": { "type": "keyword" },
+        "asset.risk_score": { "type": "float" },
+        "asset.criticality": { "type": "keyword" },
+        "asset.exposure.internet_facing": { "type": "boolean" },
+        "asset.vulnerability.count": { "type": "integer" },
+        "sentinelmesh.enriched": { "type": "boolean" },
+        "sentinelmesh.enrichment_version": { "type": "keyword" }
+      }
+    }
+  }
+}

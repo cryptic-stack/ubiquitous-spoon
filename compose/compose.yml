@@ -1,0 +1,188 @@
+name: sentinelmesh
+
+services:
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: sm-suricata
+    profiles: ["standalone", "sensor", "cyber-range"]
+    network_mode: host
+    command: ["-i", "${SENTINELMESH_MONITOR_INTERFACE:-eth1}"]
+    volumes:
+      - ../rules/suricata:/etc/suricata/rules:ro
+      - sentinelmesh-suricata:/var/log/suricata
+
+  zeek:
+    image: zeek/zeek:latest
+    container_name: sm-zeek
+    profiles: ["standalone", "sensor", "cyber-range"]
+    network_mode: host
+    command: ["zeek", "-i", "${SENTINELMESH_MONITOR_INTERFACE:-eth1}"]
+    volumes:
+      - sentinelmesh-zeek:/usr/local/zeek/logs
+
+  arkime:
+    image: alpine:latest
+    container_name: sm-arkime
+    profiles: ["standalone", "sensor", "cyber-range"]
+    network_mode: host
+    command: ["sh", "-c", "while true; do echo sentinelmesh arkime placeholder; sleep 300; done"]
+    volumes:
+      - ../configs/arkime:/opt/sentinelmesh/configs/arkime:ro
+      - sentinelmesh-arkime:/data/arkime
+
+  stenographer:
+    image: alpine:latest
+    container_name: sm-stenographer
+    profiles: ["standalone", "sensor", "cyber-range"]
+    network_mode: host
+    command: ["sh", "-c", "while true; do echo sentinelmesh stenographer placeholder; sleep 300; done"]
+    volumes:
+      - ../configs/stenographer:/opt/sentinelmesh/configs/stenographer:ro
+      - sentinelmesh-pcap:/data/pcap
+
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: sm-vector
+    profiles: ["standalone", "manager", "sensor", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - vector
+    volumes:
+      - ../configs/vector:/etc/vector:ro
+      - sentinelmesh-suricata:/logs/suricata:ro
+      - sentinelmesh-zeek:/logs/zeek:ro
+
+  redis:
+    image: redis:7-alpine
+    container_name: sm-redis
+    profiles: ["standalone", "manager", "receiver", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - redis
+    volumes:
+      - sentinelmesh-redis:/data
+
+  logstash:
+    image: opensearchproject/logstash-oss-with-opensearch-output-plugin:8.9.0
+    container_name: sm-logstash
+    profiles: ["standalone", "manager", "receiver", "search", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - logstash
+    volumes:
+      - ../configs/logstash:/usr/share/logstash/pipeline:ro
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: sm-opensearch
+    profiles: ["standalone", "manager", "manager-search", "search", "cyber-range", "dev-lab"]
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-ChangeMe-SentinelMesh-DevOnly-123!}"
+      plugins.security.disabled: "true"
+    networks:
+      smbridge:
+        aliases:
+          - opensearch
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+    volumes:
+      - sentinelmesh-opensearch:/usr/share/opensearch/data
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2
+    container_name: sm-dashboards
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    networks:
+      smbridge:
+        aliases:
+          - dashboards
+    ports:
+      - "${DASHBOARDS_PORT:-5601}:5601"
+    depends_on:
+      - opensearch
+
+  soc-portal:
+    image: nginx:alpine
+    container_name: sm-soc
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - soc
+    ports:
+      - "${SOC_PORTAL_PORT:-8080}:80"
+    volumes:
+      - ../configs/portal:/usr/share/nginx/html:ro
+
+  asset-context:
+    image: python:3.12-slim
+    container_name: sm-asset-context
+    profiles: ["standalone", "manager", "manager-search", "cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - asset-context
+    environment:
+      SENTINELMESH_ASSET_INDEX: "${SENTINELMESH_ASSET_INDEX:-sentinelmesh-assets}"
+      SENTINELMESH_EVENT_INDEX_PATTERN: "${SENTINELMESH_EVENT_INDEX_PATTERN:-sentinelmesh-events-*}"
+      SENTINELMESH_OPENSEARCH_URL: "${SENTINELMESH_OPENSEARCH_URL:-http://opensearch:9200}"
+      SENTINELMESH_RISK_MODEL: "${SENTINELMESH_RISK_MODEL:-mvp-v1}"
+      SENTINELMESH_ASSET_SEED_PATH: "${SENTINELMESH_ASSET_SEED_PATH:-/app/sample-assets.json}"
+    command: ["python", "/app/asset_context.py"]
+    volumes:
+      - ../services/asset-context:/app:ro
+      - ../schemas:/schemas:ro
+    depends_on:
+      - opensearch
+
+  sensor-enrollment:
+    image: python:3.12-slim
+    container_name: sm-sensor-enrollment
+    profiles: ["standalone", "manager", "manager-search", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - sensor-enrollment
+    environment:
+      SENTINELMESH_ENROLLMENT_DIR: "${SENTINELMESH_ENROLLMENT_DIR:-/enrollment}"
+      SENTINELMESH_ENROLLMENT_INTERVAL: "${SENTINELMESH_ENROLLMENT_INTERVAL:-300}"
+    command: ["python", "/app/enrollment_service.py"]
+    volumes:
+      - ../services/sensor-enrollment:/app:ro
+      - sentinelmesh-enrollment:/enrollment
+
+  range-engine:
+    image: python:3.12-slim
+    container_name: sm-range-engine
+    profiles: ["cyber-range", "dev-lab"]
+    networks:
+      smbridge:
+        aliases:
+          - range-engine
+    environment:
+      SENTINELMESH_RANGE_SCENARIO_DIR: "${SENTINELMESH_RANGE_SCENARIO_DIR:-/scenarios/range}"
+      SENTINELMESH_RANGE_INTERVAL: "${SENTINELMESH_RANGE_INTERVAL:-300}"
+    command: ["python", "/app/range_engine.py"]
+    volumes:
+      - ../services/range-engine:/app:ro
+      - ../scenarios:/scenarios:ro
+
+networks:
+  smbridge:
+    name: smbridge
+
+volumes:
+  sentinelmesh-suricata:
+  sentinelmesh-zeek:
+  sentinelmesh-arkime:
+  sentinelmesh-pcap:
+  sentinelmesh-opensearch:
+  sentinelmesh-redis:
+  sentinelmesh-enrollment:

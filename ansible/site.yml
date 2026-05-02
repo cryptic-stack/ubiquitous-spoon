@@ -1,0 +1,11 @@
+---
+- name: Prepare SentinelMesh NSM host
+  hosts: all
+  become: true
+  roles:
+    - base
+    - hardening
+    - docker
+    - sentinelmesh-files
+    - firstboot
+

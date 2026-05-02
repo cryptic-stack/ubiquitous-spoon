@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Inject a cyber-range scenario marker for training workflows.
+# Inputs: Scenario ID and optional output directory.
+# Outputs: JSON injection marker.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-range-inject.log"
+SCENARIO_DIR="${SENTINELMESH_RANGE_SCENARIO_DIR:-/opt/sentinelmesh/scenarios/range}"
+OUTPUT_DIR="${SENTINELMESH_RANGE_OUTPUT_DIR:-/data/sentinelmesh/range/injections}"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-range-inject --scenario ID [--output-dir PATH]
+
+Creates a scenario injection marker. Future versions will emit synthetic logs,
+coordinate PCAP replay, and notify scoring systems.
+EOF
+}
+
+SCENARIO_ID=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --scenario)
+      SCENARIO_ID="${2:-}"
+      shift 2
+      ;;
+    --output-dir)
+      OUTPUT_DIR="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$SCENARIO_ID" ]]; then
+  usage
+  exit 1
+fi
+
+SCENARIO_PATH="$SCENARIO_DIR/$SCENARIO_ID.json"
+if [[ ! -f "$SCENARIO_PATH" ]]; then
+  echo "Scenario not found: $SCENARIO_PATH"
+  exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR"
+TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+OUTPUT_PATH="$OUTPUT_DIR/${TIMESTAMP}-${SCENARIO_ID}.json"
+
+cat > "$OUTPUT_PATH" <<EOF
+{
+  "scenario_id": "$SCENARIO_ID",
+  "scenario_path": "$SCENARIO_PATH",
+  "injected_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "status": "marker-created"
+}
+EOF
+
+echo "Scenario injection marker created: $OUTPUT_PATH"

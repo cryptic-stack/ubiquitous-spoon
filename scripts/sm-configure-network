@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Record SentinelMesh network role configuration.
+# Inputs: Management and monitoring interface settings.
+# Outputs: /etc/sentinelmesh/network.yml and netplan preview.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-configure-network.log"
+OUTPUT_FILE="/etc/sentinelmesh/network.yml"
+NETPLAN_PREVIEW="/etc/sentinelmesh/netplan-preview.yaml"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-configure-network --management-interface IFACE --monitoring-interface IFACE [--dhcp]
+       sm-configure-network --management-interface IFACE --monitoring-interface IFACE --static CIDR --gateway IP --dns IP[,IP]
+
+Records network intent. MVP does not apply netplan automatically.
+EOF
+}
+
+MGMT_IFACE=""
+MONITOR_IFACE=""
+MODE="dhcp"
+STATIC_CIDR=""
+GATEWAY=""
+DNS="1.1.1.1"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --management-interface)
+      MGMT_IFACE="${2:-}"
+      shift 2
+      ;;
+    --monitoring-interface)
+      MONITOR_IFACE="${2:-}"
+      shift 2
+      ;;
+    --dhcp)
+      MODE="dhcp"
+      shift
+      ;;
+    --static)
+      MODE="static"
+      STATIC_CIDR="${2:-}"
+      shift 2
+      ;;
+    --gateway)
+      GATEWAY="${2:-}"
+      shift 2
+      ;;
+    --dns)
+      DNS="${2:-}"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR" /etc/sentinelmesh
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if [[ -z "$MGMT_IFACE" || -z "$MONITOR_IFACE" ]]; then
+  usage
+  exit 1
+fi
+
+if ! ip link show "$MGMT_IFACE" >/dev/null 2>&1; then
+  echo "Management interface not found: $MGMT_IFACE"
+  exit 1
+fi
+
+if ! ip link show "$MONITOR_IFACE" >/dev/null 2>&1; then
+  echo "Monitoring interface not found: $MONITOR_IFACE"
+  exit 1
+fi
+
+if [[ "$MODE" == "static" && ( -z "$STATIC_CIDR" || -z "$GATEWAY" ) ]]; then
+  echo "Static mode requires --static CIDR and --gateway IP."
+  exit 1
+fi
+
+cat > "$OUTPUT_FILE" <<EOF
+management_interface: $MGMT_IFACE
+monitoring_interface: $MONITOR_IFACE
+management_ip_mode: $MODE
+management_ip: $STATIC_CIDR
+gateway: $GATEWAY
+dns: $DNS
+applied: false
+EOF
+
+if [[ "$MODE" == "dhcp" ]]; then
+  cat > "$NETPLAN_PREVIEW" <<EOF
+network:
+  version: 2
+  ethernets:
+    $MGMT_IFACE:
+      dhcp4: true
+    $MONITOR_IFACE:
+      dhcp4: false
+      optional: true
+EOF
+else
+  cat > "$NETPLAN_PREVIEW" <<EOF
+network:
+  version: 2
+  ethernets:
+    $MGMT_IFACE:
+      addresses:
+        - $STATIC_CIDR
+      routes:
+        - to: default
+          via: $GATEWAY
+      nameservers:
+        addresses: [${DNS}]
+    $MONITOR_IFACE:
+      dhcp4: false
+      optional: true
+EOF
+fi
+
+echo "Network intent written to $OUTPUT_FILE"
+echo "Netplan preview written to $NETPLAN_PREVIEW"

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Deploy a Docker Compose profile.
+# Inputs: Profile name.
+# Outputs: Running containers for the selected profile.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-deploy-profile.log"
+BASE_DIR="/opt/sentinelmesh"
+COMPOSE_FILE="$BASE_DIR/compose/compose.yml"
+PROFILE_DIR="$BASE_DIR/profiles"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-deploy-profile PROFILE
+
+Profiles:
+  standalone
+  manager
+  sensor
+  cyber-range
+  dev-lab
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+PROFILE="${1:-}"
+if [[ -z "$PROFILE" ]]; then
+  usage
+  exit 1
+fi
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+ENV_FILE="$PROFILE_DIR/$PROFILE.env"
+
+if [[ ! -f "$COMPOSE_FILE" ]]; then
+  echo "Compose file not found: $COMPOSE_FILE"
+  exit 1
+fi
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "Profile environment file not found: $ENV_FILE"
+  exit 1
+fi
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" --profile "$PROFILE" up -d
+

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SentinelMesh SOC</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1419;
+        --panel: #151d24;
+        --panel-2: #1c2730;
+        --text: #eef4f8;
+        --muted: #9fb0bd;
+        --line: #2c3a45;
+        --accent: #2fb7a1;
+        --warn: #e1b341;
+        --critical: #e05d5d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      header {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--line);
+        background: #111920;
+      }
+
+      .brand {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      nav {
+        display: flex;
+        gap: 8px;
+      }
+
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+        padding: 8px 10px;
+        border-radius: 6px;
+      }
+
+      nav a.active {
+        background: var(--panel-2);
+        color: var(--text);
+      }
+
+      main {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .metric,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .metric {
+        padding: 16px;
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 28px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 16px;
+      }
+
+      .panel h2 {
+        margin: 0;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        font-size: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        color: var(--text);
+        font-size: 12px;
+      }
+
+      .critical {
+        color: var(--critical);
+      }
+
+      .warn {
+        color: var(--warn);
+      }
+
+      .ok {
+        color: var(--accent);
+      }
+
+      @media (max-width: 860px) {
+        header {
+          height: auto;
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 10px;
+          padding: 14px 16px;
+        }
+
+        nav {
+          flex-wrap: wrap;
+        }
+
+        main {
+          padding: 16px;
+        }
+
+        .summary,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">SentinelMesh SOC</div>
+      <nav aria-label="Primary">
+        <a class="active" href="#">Overview</a>
+        <a href="#">Alerts</a>
+        <a href="#">Assets</a>
+        <a href="#">Cases</a>
+        <a href="#">Range</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="summary" aria-label="Summary">
+        <div class="metric">
+          <span>Open Alerts</span>
+          <strong>0</strong>
+        </div>
+        <div class="metric">
+          <span>Critical Assets</span>
+          <strong>1</strong>
+        </div>
+        <div class="metric">
+          <span>Indexed Events</span>
+          <strong>0</strong>
+        </div>
+        <div class="metric">
+          <span>Sensor Health</span>
+          <strong class="warn">Pending</strong>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Priority Queue</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Asset</th>
+                <th>Signal</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Waiting</td>
+                <td>range-dc-01</td>
+                <td><span class="badge">seed context</span></td>
+                <td class="critical">critical</td>
+              </tr>
+              <tr>
+                <td>Waiting</td>
+                <td>sensor</td>
+                <td><span class="badge">deployment</span></td>
+                <td class="warn">pending</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Service Readiness</h2>
+          <table>
+            <tbody>
+              <tr>
+                <td>OpenSearch</td>
+                <td class="warn">pending</td>
+              </tr>
+              <tr>
+                <td>Asset Context</td>
+                <td class="ok">defined</td>
+              </tr>
+              <tr>
+                <td>Sensor Enrollment</td>
+                <td class="ok">defined</td>
+              </tr>
+              <tr>
+                <td>Range Engine</td>
+                <td class="ok">defined</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

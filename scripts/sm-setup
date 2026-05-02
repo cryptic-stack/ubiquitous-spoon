@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: First boot setup wizard for selecting and deploying an install profile.
+# Inputs: Operator choices, network interfaces, storage paths.
+# Outputs: /etc/sentinelmesh/profile and /etc/sentinelmesh/sentinelmesh.yml.
+# Safe to re-run: yes, but re-running can redeploy the selected Compose profile.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-setup.log"
+BASE_DIR="/opt/sentinelmesh"
+COMPOSE_FILE="$BASE_DIR/compose/compose.yml"
+PROFILE_DIR="$BASE_DIR/profiles"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-setup [--help]
+
+Runs the SentinelMesh first boot wizard and deploys a selected profile.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+mkdir -p "$LOG_DIR" /etc/sentinelmesh /etc/sentinelmesh/secrets
+chmod 700 /etc/sentinelmesh/secrets
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "SentinelMesh NSM Setup"
+echo
+echo "Select install type:"
+echo "1) Standalone NSM"
+echo "2) Manager / Search Node"
+echo "3) Sensor Node"
+echo "4) Cyber Range Node"
+echo "5) Developer / Lab Node"
+echo "6) Dedicated Manager Node"
+echo "7) Dedicated Search Node"
+echo "8) Receiver Node"
+echo
+
+read -r -p "Choice [1-8]: " choice
+
+case "$choice" in
+  1) PROFILE="standalone" ;;
+  2) PROFILE="manager-search" ;;
+  3) PROFILE="sensor" ;;
+  4) PROFILE="cyber-range" ;;
+  5) PROFILE="dev-lab" ;;
+  6) PROFILE="manager" ;;
+  7) PROFILE="search" ;;
+  8) PROFILE="receiver" ;;
+  *)
+    echo "Invalid choice."
+    exit 1
+    ;;
+esac
+
+read -r -p "Hostname [sentinelmesh]: " HOSTNAME_VALUE
+HOSTNAME_VALUE="${HOSTNAME_VALUE:-sentinelmesh}"
+
+read -r -p "Management interface [eth0]: " MGMT_IFACE
+MGMT_IFACE="${MGMT_IFACE:-eth0}"
+
+read -r -p "Monitoring interface [eth1]: " MONITOR_IFACE
+MONITOR_IFACE="${MONITOR_IFACE:-eth1}"
+
+read -r -p "Data path [/data/sentinelmesh]: " DATA_PATH
+DATA_PATH="${DATA_PATH:-/data/sentinelmesh}"
+
+read -r -p "PCAP path [/data/pcap]: " PCAP_PATH
+PCAP_PATH="${PCAP_PATH:-/data/pcap}"
+
+mkdir -p "$DATA_PATH" "$PCAP_PATH"
+
+"$BASE_DIR/bin/sm-configure-network" \
+  --management-interface "$MGMT_IFACE" \
+  --monitoring-interface "$MONITOR_IFACE" \
+  --dhcp || true
+
+"$BASE_DIR/bin/sm-configure-storage" \
+  --data-path "$DATA_PATH" \
+  --pcap-path "$PCAP_PATH" \
+  --opensearch-path "$DATA_PATH/opensearch"
+
+cat > /etc/sentinelmesh/profile <<EOF
+$PROFILE
+EOF
+
+cat > /etc/sentinelmesh/sentinelmesh.yml <<EOF
+profile: $PROFILE
+hostname: $HOSTNAME_VALUE
+network:
+  management_interface: $MGMT_IFACE
+  monitoring_interface: $MONITOR_IFACE
+storage:
+  data_path: $DATA_PATH
+  pcap_path: $PCAP_PATH
+security:
+  tls_mode: selfsigned
+feeds:
+  suricata_rules: true
+  sigma_rules: true
+  yara_rules: true
+EOF
+
+echo "Selected profile: $PROFILE"
+echo "Configuration written to /etc/sentinelmesh/sentinelmesh.yml"
+
+"$BASE_DIR/bin/sm-generate-secrets"
+"$BASE_DIR/bin/sm-deploy-profile" "$PROFILE"
+case "$PROFILE" in
+  standalone|manager|manager-search|search|cyber-range|dev-lab)
+    "$BASE_DIR/bin/sm-install-index-templates" || true
+    ;;
+esac
+"$BASE_DIR/bin/sm-doctor" || true
+
+echo "Setup complete."

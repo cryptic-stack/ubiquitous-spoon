@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# SentinelMesh NSM
+# Purpose: Install OpenSearch index templates used by SentinelMesh.
+# Inputs: OpenSearch URL and JSON templates under /opt/sentinelmesh/configs/opensearch/index-templates.
+# Outputs: Installed index templates.
+# Safe to re-run: yes.
+
+LOG_DIR="/var/log/sentinelmesh"
+LOG_FILE="$LOG_DIR/sm-install-index-templates.log"
+TEMPLATE_DIR="${SENTINELMESH_TEMPLATE_DIR:-/opt/sentinelmesh/configs/opensearch/index-templates}"
+OPENSEARCH_URL="${SENTINELMESH_OPENSEARCH_URL:-http://localhost:9200}"
+RETRIES="${SENTINELMESH_OPENSEARCH_RETRIES:-30}"
+SLEEP_SECONDS="${SENTINELMESH_OPENSEARCH_RETRY_SLEEP:-5}"
+
+usage() {
+  cat <<'EOF'
+Usage: sm-install-index-templates [--help]
+
+Environment:
+  SENTINELMESH_TEMPLATE_DIR              Template directory.
+  SENTINELMESH_OPENSEARCH_URL            OpenSearch URL.
+  SENTINELMESH_OPENSEARCH_RETRIES        Readiness retry count.
+  SENTINELMESH_OPENSEARCH_RETRY_SLEEP    Seconds between retries.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+mkdir -p "$LOG_DIR"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required."
+  exit 1
+fi
+
+if [[ ! -d "$TEMPLATE_DIR" ]]; then
+  echo "Template directory not found: $TEMPLATE_DIR"
+  exit 1
+fi
+
+echo "Waiting for OpenSearch at $OPENSEARCH_URL"
+for attempt in $(seq 1 "$RETRIES"); do
+  if curl -fsS "$OPENSEARCH_URL" >/dev/null; then
+    break
+  fi
+
+  if [[ "$attempt" == "$RETRIES" ]]; then
+    echo "OpenSearch did not become ready after $RETRIES attempts."
+    exit 1
+  fi
+
+  sleep "$SLEEP_SECONDS"
+done
+
+for template_path in "$TEMPLATE_DIR"/*.json; do
+  template_name="$(basename "$template_path" .json)"
+  echo "Installing index template: $template_name"
+  curl -fsS \
+    -X PUT \
+    -H 'Content-Type: application/json' \
+    --data-binary "@$template_path" \
+    "$OPENSEARCH_URL/_index_template/$template_name" >/dev/null
+done
+
+echo "Index templates installed."

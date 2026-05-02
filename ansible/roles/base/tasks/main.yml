@@ -1,0 +1,49 @@
+---
+# SentinelMesh NSM
+# Purpose: Install baseline packages and create common directories.
+
+- name: Install baseline packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - chrony
+      - cloud-init
+      - curl
+      - git
+      - jq
+      - nftables
+      - openssh-server
+      - openssl
+      - python3
+      - python3-pip
+      - rsync
+      - tcpreplay
+      - unzip
+      - yq
+    state: present
+    update_cache: true
+
+- name: Ensure SentinelMesh system directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /opt/sentinelmesh, mode: "0755" }
+    - { path: /opt/sentinelmesh/bin, mode: "0755" }
+    - { path: /etc/sentinelmesh, mode: "0755" }
+    - { path: /etc/sentinelmesh/secrets, mode: "0700" }
+    - { path: /var/log/sentinelmesh, mode: "0755" }
+    - { path: /data/sentinelmesh, mode: "0755" }
+    - { path: /data/pcap, mode: "0755" }
+
+- name: Enable core services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - chrony
+    - ssh

@@ -1,0 +1,112 @@
+---
+# SentinelMesh NSM
+# Purpose: Install SentinelMesh scripts, Compose files, configs, profiles, rules, and docs.
+
+- name: Copy appliance command scripts
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/opt/sentinelmesh/bin/{{ item | basename }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_fileglob:
+    - "{{ playbook_dir }}/../scripts/sm-*"
+
+- name: Copy Compose files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../compose/"
+    dest: /opt/sentinelmesh/compose/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy profile environment files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../profiles/"
+    dest: /opt/sentinelmesh/profiles/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy service configs
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../configs/"
+    dest: /opt/sentinelmesh/configs/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy SentinelMesh services
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../services/"
+    dest: /opt/sentinelmesh/services/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy SentinelMesh schemas
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../schemas/"
+    dest: /opt/sentinelmesh/schemas/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy SentinelMesh scenarios
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../scenarios/"
+    dest: /opt/sentinelmesh/scenarios/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy SentinelMesh examples
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../examples/"
+    dest: /opt/sentinelmesh/examples/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy detection rules
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../rules/"
+    dest: /opt/sentinelmesh/rules/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copy documentation onto appliance
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../docs/"
+    dest: /opt/sentinelmesh/docs/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Link SentinelMesh commands into PATH
+  ansible.builtin.file:
+    src: "/opt/sentinelmesh/bin/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+    owner: root
+    group: root
+    force: true
+  loop:
+    - sm-setup
+    - sm-doctor
+    - sm-firstboot-reminder
+    - sm-detect-hardware
+    - sm-configure-network
+    - sm-configure-storage
+    - sm-create-enrollment-token
+    - sm-generate-secrets
+    - sm-import-vulnerabilities
+    - sm-deploy-profile
+    - sm-enroll-sensor
+    - sm-install-index-templates
+    - sm-range-inject
+    - sm-replay-pcap
+    - sm-update-rules
+    - sm-backup
+    - sm-restore
